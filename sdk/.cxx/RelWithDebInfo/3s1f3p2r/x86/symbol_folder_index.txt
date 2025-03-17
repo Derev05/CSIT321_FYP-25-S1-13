@@ -1,1 +1,0 @@
-C:\Users\Marc Almeda\AndroidStudioProjects\BioAuth\sdk\build\intermediates\cxx\RelWithDebInfo\3s1f3p2r\obj\x86

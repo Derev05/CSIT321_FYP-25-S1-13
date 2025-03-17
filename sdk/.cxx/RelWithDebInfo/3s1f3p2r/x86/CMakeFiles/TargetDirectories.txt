@@ -1,3 +1,0 @@
-C:/Users/Marc Almeda/AndroidStudioProjects/BioAuth/sdk/.cxx/RelWithDebInfo/3s1f3p2r/x86/CMakeFiles/opencv_jni_shared.dir
-C:/Users/Marc Almeda/AndroidStudioProjects/BioAuth/sdk/.cxx/RelWithDebInfo/3s1f3p2r/x86/CMakeFiles/edit_cache.dir
-C:/Users/Marc Almeda/AndroidStudioProjects/BioAuth/sdk/.cxx/RelWithDebInfo/3s1f3p2r/x86/CMakeFiles/rebuild_cache.dir

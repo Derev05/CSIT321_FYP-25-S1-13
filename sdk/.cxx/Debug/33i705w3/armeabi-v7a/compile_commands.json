@@ -1,7 +1,0 @@
-[
-{
-  "directory": "C:/Users/Marc Almeda/AndroidStudioProjects/BioAuth/sdk/.cxx/Debug/33i705w3/armeabi-v7a",
-  "command": "C:\\Users\\MARCAL~1\\AppData\\Local\\Android\\Sdk\\ndk\\251~1.893\\TOOLCH~1\\llvm\\prebuilt\\WINDOW~1\\bin\\CLANG_~1.EXE --target=armv7-none-linux-androideabi21 --sysroot=\"C:/Users/Marc Almeda/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot\" -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\opencv_jni_shared.dir\\dummy.cpp.o -c \"C:\\Users\\Marc Almeda\\AndroidStudioProjects\\BioAuth\\sdk\\libcxx_helper\\dummy.cpp\"",
-  "file": "C:\\Users\\Marc Almeda\\AndroidStudioProjects\\BioAuth\\sdk\\libcxx_helper\\dummy.cpp"
-}
-]

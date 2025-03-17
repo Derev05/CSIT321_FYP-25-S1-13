@@ -1,2 +1,0 @@
-ninja: Entering directory `C:\Users\Marc Almeda\AndroidStudioProjects\BioAuth\sdk\.cxx\Debug\33i705w3\arm64-v8a'
-ninja: no work to do.

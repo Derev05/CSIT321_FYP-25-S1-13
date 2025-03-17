@@ -1,1 +1,0 @@
-C:\Users\Marc Almeda\AndroidStudioProjects\BioAuth\sdk\libcxx_helper\CMakeLists.txt
