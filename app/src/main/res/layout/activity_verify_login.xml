@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#6699FF">
+
+    <!-- ✅ Show Signed-in Email -->
+
+    <!-- ✅ OTP Input Field (Styled Like Login Page) -->
+
+    <!-- ✅ Verify OTP Button (Styled Like Login Page) -->
+
+    <!-- ✅ Resend OTP Button (Styled Like Login Page) -->
+
+    <!-- ✅ ProgressBar (Styled Like Login Page) -->
+
+    <TextView
+        android:id="@+id/emailDisplay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="72dp"
+        android:gravity="center"
+        android:text="Signed in as: user@example.com"
+        android:textColor="#FEFEFE"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/otpInput"
+        android:layout_width="240dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="224dp"
+        android:background="@drawable/custom_input"
+        android:hint="Enter OTP"
+        android:inputType="number"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/emailDisplay" />
+
+    <Button
+        android:id="@+id/verifyOtpButton"
+        android:layout_width="240dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/custom_input"
+        android:text="VERIFY OTP"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/otpInput" />
+
+    <Button
+        android:id="@+id/resendOtpButton"
+        android:layout_width="240dp"
+        android:layout_height="45dp"
+        android:layout_marginTop="36dp"
+        android:background="@drawable/custom_input"
+        android:enabled="false"
+        android:text="Resend OTP"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/verifyOtpButton" />
+
+    <ProgressBar
+        android:id="@+id/loadingSpinner"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:visibility="gone"
+        style="?android:attr/progressBarStyleLarge"
+        app:layout_constraintTop_toBottomOf="@id/resendOtpButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.5"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

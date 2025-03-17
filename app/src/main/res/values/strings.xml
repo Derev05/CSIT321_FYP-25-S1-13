@@ -1,0 +1,67 @@
+<resources>
+    <string name="app_name1">Biometric Educational</string>
+    <string name="biometric">Biometric Data</string>
+
+    <string name="otp_sent_message">We have sent a 6-digit OTP to your email</string>
+    <string name="enter_otp">Enter OTP</string>
+    <string name="verify_otp">VERIFY OTP</string>
+    <string name="resend_otp">RESEND OTP</string>
+    <string name="app_name">Application</string>
+    <string name="default_notification_channel_id">my_notification_channel</string>
+    <string name="default_notification_channel_name">Default Channel</string>
+    <string name="title_activity_fullscreen">activity_fullscreen</string>
+    <string name="capture_button_desc">Capture Image</string>
+    <string name="image_preview_desc">Preview of captured image</string>
+    <string name="login">Login</string>
+    <string name="email">email</string>
+    <string name="remember_me">remember_me</string>
+    <string name="enter_password">enter_password</string>
+    <string name="password">password</string>
+    <string name="enter_email">enter_email</string>
+    <string name="Password">Password</string>
+    <string name="Email">Email</string>
+    <string name="Sign_Up">Sign Up</string>
+    <string name="User">User</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="Login">Login</string>
+    <string name="forgotpassword">forgot password</string>
+    <string name="dummy_button">"Camera "</string>
+    <string name="dummy_content">take picture</string>
+    <string name="cancel">Cancel</string>
+    <string name="send_otp">send otp</string>
+    <string name="request_otp">request otp\n</string>
+    <string name="otp">OTP</string>
+    <string name="otp_description">2FA verification by OTP will be sent via email. Please check and key in the OTP</string>
+    <string name="fa_verification">2FA Verification</string>
+    <string name="terms_conditions_text"><![CDATA[
+<b>1. Collection of Personal Data </b>
+ <br/>We collect and store personal data, including biometric data, email, and authentication credentials, solely for the purpose of authentication and account security.<br/><br/>
+
+<b>2. Purpose of Data Collection</b><br/>
+Your data will be used only for:<br/>
+- User authentication and login security<br/>
+- Access control to restricted app features<br/>
+- Compliance with security regulations<br/><br/>
+
+<b>3. Consent and Withdrawal</b>
+<br/>By agreeing to these Terms &amp; Conditions, you consent to the collection and use of your data. You may withdraw your consent at any time by contacting our Data Protection Officer (DPO) at dpo@example.com.<br/><br/>
+
+<b>4. Data Protection and Retention</b><br/>
+We implement strict security measures (encryption, access control) to protect your data. Data will be retained for as long as required by law or until you delete your account.<br/><br/>
+
+<b>5. Sharing of Data</b><br/>
+Your data <b>will not be shared</b> with third parties except when necessary for security or legal compliance.<br/><br/>
+
+<b>6. Access and Correction of Data</b><br/>
+You may request to access or correct your personal data by contacting our DPO.<br/><br/>
+
+<b>7. Governing Law</b><br/>
+These terms comply with the Personal Data Protection Act (PDPA) of Singapore.<br/><br/>
+ ]]></string>
+
+    <string name="agree_terms">I Agree to the Terms &amp; Conditions</string>
+    <string name="UserEnroll">Enroll </string>
+    <string name="Biometric">Biometric</string>
+    <string name="UserAuth">Authenticate</string>
+</resources>

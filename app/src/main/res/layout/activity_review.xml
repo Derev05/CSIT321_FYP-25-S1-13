@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4477FF">
+
+    <!-- Review Title -->
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Review"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp"/>
+
+    <!-- Overall Rating Label -->
+    <TextView
+        android:id="@+id/overallRatingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Overall rating"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/titleText"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="40dp"/>
+
+    <!-- Tap to Rate -->
+    <TextView
+        android:id="@+id/tapToRateText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tap to rate"
+        android:textSize="12sp"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/overallRatingText"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        android:layout_marginTop="5dp"/>
+
+    <!-- Rating Stars -->
+    <RatingBar
+        android:id="@+id/ratingBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="5"
+        android:stepSize="1.0"
+        android:rating="0"
+        android:theme="@style/Widget.AppCompat.RatingBar.Indicator"
+        android:progressTint="@android:color/holo_orange_light"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        app:layout_constraintTop_toBottomOf="@id/tapToRateText"
+        android:layout_marginTop="10dp"/>
+
+    <!-- Review Label -->
+    <TextView
+        android:id="@+id/reviewLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Review"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/ratingBar"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        android:layout_marginTop="20dp"/>
+
+    <!-- Review Input Box -->
+    <EditText
+        android:id="@+id/reviewInput"
+        android:layout_width="280dp"
+        android:layout_height="80dp"
+        android:background="@drawable/review_box"
+        android:hint="Write your review here..."
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:padding="10dp"
+        android:gravity="start|top"
+        app:layout_constraintTop_toBottomOf="@id/reviewLabel"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        android:layout_marginTop="10dp"/>
+
+    <!-- Would you recommend this app? -->
+    <TextView
+        android:id="@+id/recommendText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Would you recommend this app to someone?"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/reviewInput"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        android:layout_marginTop="20dp"/>
+
+    <!-- Yes/No Radio Buttons -->
+    <RadioGroup
+        android:id="@+id/recommendGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/recommendText"
+        app:layout_constraintStart_toStartOf="@id/overallRatingText"
+        android:layout_marginTop="10dp">
+
+        <RadioButton
+            android:id="@+id/recommendYes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Yes"
+            android:textColor="@android:color/white"/>
+
+        <RadioButton
+            android:id="@+id/recommendNo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="20dp"/>
+    </RadioGroup>
+
+    <!-- Submit Review Button -->
+    <Button
+        android:id="@+id/submitReviewButton"
+        android:layout_width="338dp"
+        android:layout_height="58dp"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/rounded_button"
+        android:text="Submit review"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recommendGroup" />
+
+    <!-- Back to Home Button -->
+    <Button
+        android:id="@+id/backToHomeButton"
+        android:layout_width="335dp"
+        android:layout_height="61dp"
+        android:layout_marginTop="44dp"
+        android:background="@drawable/rounded_button"
+        android:text="Back to home"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.552"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/submitReviewButton" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

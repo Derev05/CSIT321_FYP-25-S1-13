@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4477FF"
+    tools:context=".activity_terms_condition">
+
+    <!-- Title (Freely Movable) -->
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Terms and Conditions"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp"/>
+
+    <!-- Scrollable Terms & Conditions -->
+
+    <!-- Checkbox for Agreement (Movable) -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/termsScrollView"
+        android:layout_width="319dp"
+        android:layout_height="357dp"
+        android:layout_marginStart="44dp"
+        android:layout_marginTop="32dp"
+        android:background="@android:color/white"
+        android:padding="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleText">
+
+        <TextView
+            android:id="@+id/termsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/terms_conditions_text"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            />
+
+    </androidx.core.widget.NestedScrollView>
+
+    <CheckBox
+        android:id="@+id/agreeCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/agree_terms"
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/termsScrollView"
+        app:layout_constraintStart_toStartOf="@id/termsScrollView"
+        android:layout_marginTop="20dp"/>
+
+    <!-- Acknowledge Button (Movable) -->
+
+    <!-- Decline Button (Movable) -->
+
+    <Button
+        android:id="@+id/acknowledgeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_button"
+        android:backgroundTint="@null"
+        android:text="Acknowledge"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="@id/termsScrollView"
+        app:layout_constraintTop_toBottomOf="@id/agreeCheckbox" />
+
+    <Button
+        android:id="@+id/declineButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_button"
+        android:text="Decline"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@id/acknowledgeButton"
+        app:layout_constraintEnd_toEndOf="@id/termsScrollView"
+        app:layout_constraintTop_toBottomOf="@id/agreeCheckbox"
+
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

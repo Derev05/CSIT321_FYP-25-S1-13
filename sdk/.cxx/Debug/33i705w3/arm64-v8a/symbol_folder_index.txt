@@ -1,0 +1,1 @@
+C:\Users\Marc Almeda\AndroidStudioProjects\BioAuth\sdk\build\intermediates\cxx\Debug\33i705w3\obj\arm64-v8a
