@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".FaceConfirmActivity">
+
+    <TextView
+        android:id="@+id/confirm_face_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Is this your face?"
+        android:textAlignment="center"
+        android:textColor="@color/blue"
+        android:layout_marginTop="120dp"
+        android:textSize="36sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/detected_face_image_view"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
+        android:background="@android:color/darker_gray"/>
+
+    <Button
+        android:id="@+id/confirm_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Yes"
+        android:layout_below="@id/detected_face_image_view"
+        android:layout_marginTop="20dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="75dp"/>
+
+    <Button
+        android:id="@+id/cancel_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/detected_face_image_view"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="75dp"
+        android:text="No" />
+
+</RelativeLayout>

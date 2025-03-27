@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/defaultscreen"
+    tools:context=".OtpVerificationActivity">
+
+    <!-- Title: 2FA Verification -->
+    <TextView
+        android:id="@+id/otpTitle"
+        android:layout_width="275dp"
+        android:layout_height="66dp"
+        android:text="2FA Verification"
+        android:textAlignment="center"
+        android:textColor="#FEFEFE"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.049" />
+
+    <!-- OTP Label -->
+    <TextView
+        android:id="@+id/otpLabel"
+        android:layout_width="121dp"
+        android:layout_height="30dp"
+        android:text="OTP"
+        android:textAlignment="center"
+        android:textColor="#FEFEFE"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.323" />
+
+    <!-- OTP Input Field -->
+
+    <!-- Request OTP Button -->
+    <EditText
+        android:id="@+id/otpInput"
+        android:layout_width="255dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="50dp"
+        android:background="@drawable/custom_input"
+        android:hint="Enter OTP"
+        android:inputType="number"
+        android:maxLength="6"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.608"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.263" />
+
+    <Button
+        android:id="@+id/requestOtpButton"
+        android:layout_width="140dp"
+        android:layout_height="39dp"
+        android:background="@drawable/custom_input"
+        android:text="Request OTP"
+        android:textAlignment="center"
+        android:textColor="#FEFEFE"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.867"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/otpLabel"
+        app:layout_constraintVertical_bias="0.118" />
+
+    <!-- Verify OTP Button -->
+    <Button
+        android:id="@+id/verifyOtpButton"
+        android:layout_width="359dp"
+        android:layout_height="39dp"
+        android:background="@drawable/custom_input"
+        android:text="Verify OTP"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_bias="0.101" />
+
+    <!-- Cancel Button -->
+    <Button
+        android:id="@+id/cancelButton"
+        android:layout_width="359dp"
+        android:layout_height="39dp"
+        android:background="@drawable/custom_input"
+        android:text="Cancel"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_bias="0.15" />
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/loadingSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/verifyOtpButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
