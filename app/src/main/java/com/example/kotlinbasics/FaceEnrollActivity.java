@@ -78,7 +78,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         enrollFaceButton = findViewById(R.id.enroll_face_button);
         modelStatusText = findViewById(R.id.model_status);
 
-        if (!OpenCVLoader.initDebug()) {
+        if (!OpenCVLoader.initLocal()) {
             Log.e("OpenCV", "Initialization failed.");
         } else {
             Log.d("OpenCV", "Initialization successful.");
@@ -133,7 +133,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat();
         grayFrame = new Mat();
-        absoluteFaceSize = (int) (height * 0.4);
+        absoluteFaceSize = (int) (height * 0.3);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -359,7 +359,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     @Override
     protected void onResume() {
         super.onResume();
-        if (OpenCVLoader.initDebug()) {
+        if (OpenCVLoader.initLocal()) {
             if (javaCameraView != null) {
                 javaCameraView.enableView();
             }

@@ -131,6 +131,11 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
 
+        <activity android:name=".FaceAuthActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
     </application>
 
 </manifest>

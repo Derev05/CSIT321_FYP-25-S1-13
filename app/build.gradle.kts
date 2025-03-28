@@ -66,8 +66,10 @@ dependencies {
 
     implementation("org.tensorflow:tensorflow-lite:2.9.0")
     implementation("androidx.biometric:biometric:1.1.0")
-    implementation ("com.quickbirdstudios:opencv-contrib:4.5.2")
+    implementation ("org.opencv:opencv:4.11.0")
     implementation("com.google.android.gms:play-services-ads:22.6.0")
+    implementation ("com.microsoft.onnxruntime:onnxruntime-android:latest.release")
+    implementation ("com.google.code.gson:gson:2.12.1")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

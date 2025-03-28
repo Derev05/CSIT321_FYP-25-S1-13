@@ -28,6 +28,10 @@ public class enroll_auth extends AppCompatActivity {
         });
 
         // You can add authBtn logic here if needed
+        authBtn.setOnClickListener(v ->{
+            Intent authIntent = new Intent(enroll_auth.this, FaceAuthActivity.class);
+            startActivity(authIntent);
+        });
     }
 
     @Override
