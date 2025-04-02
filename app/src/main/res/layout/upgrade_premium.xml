@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="24dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/premium"
+            android:contentDescription="Premium Icon"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upgrade to Premium"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✔ Remove ads\n✔ Unlock advanced features\n✔ Get early access to updates"
+            android:textSize="16sp"
+            android:lineSpacingExtra="6dp"
+            android:textColor="#555555"
+            android:gravity="start"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/upgradeNowBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/upgrade"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:backgroundTint="#FF9800"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/laterText"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="10dp"
+            android:text="Maybe later"
+            android:gravity="center"
+            android:textColor="#888888"
+            android:textSize="14sp" />
+    </LinearLayout>
+</ScrollView>

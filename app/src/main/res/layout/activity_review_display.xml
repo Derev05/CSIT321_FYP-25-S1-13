@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- ✅ Back Button to navigate back to CoverActivity -->
+    <Button
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        android:background="@drawable/custom_input"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- ✅ No Reviews Text (Hidden Initially) -->
+    <TextView
+        android:id="@+id/noReviewsText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No reviews found."
+        android:textSize="16sp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"/>
+
+    <!-- ✅ Progress Bar (Hidden Initially) -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <!-- ✅ RecyclerView for displaying reviews -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

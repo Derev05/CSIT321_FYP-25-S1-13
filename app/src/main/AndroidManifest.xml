@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 🔹 Biometric & Fingerprint Permissions -->
+    <uses-feature android:name="android.hardware.biometrics" android:required="true"/>
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
+    <!-- 🔹 Internet & Network Permissions -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- 🔹 SMS Permissions (For OTP Verification) -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/> <!-- (If needed for phone call OTPs) -->
+
+    <!-- 🔹 Ensure Telephony Feature Exists but Not Required -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false"/>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.KotlinBasics"
+        tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4621437870843076~6603817231"/>
+
+        <!-- 🔹 Firebase Notification Channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
+
+        <meta-data
+            android:name="com.google.firebase.storage.defaultBucket"
+            android:value="gs://your-bucket-name.appspot.com" />
+
+        <!-- 🔹 Main Launcher Activity -->
+        <activity
+            android:name=".CoverActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 🔹 Other Activities (All using NoActionBar Theme) -->
+        <activity android:name=".LoginActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".SignUpActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".ForgotUser"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".OtpVerificationActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".MainMenu"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".activity_terms_condition"
+            android:exported="true"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+        
+        <activity android:name=".reviews_data"
+            android:exported="true"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".enroll_auth"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".FaceEnrollActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".FaceConfirmActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".ReviewDisplayActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".UserProfileActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".CheckoutActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".FaceAuthActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+    </application>
+
+</manifest>
