@@ -45,7 +45,11 @@
                 android:hint="Enter Email"
                 android:drawableLeft="@drawable/ic_email"
                 android:textColor="@color/black"
-                android:drawablePadding="8dp"/>
+                android:drawablePadding="8dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:scrollHorizontally="true"
+                android:inputType="textEmailAddress" />
 
             <Button
                 android:id="@+id/submitButton"

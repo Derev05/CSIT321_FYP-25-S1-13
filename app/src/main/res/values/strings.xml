@@ -34,6 +34,9 @@
     <string name="otp">OTP</string>
     <string name="otp_description">2FA verification by OTP will be sent via email. Please check and key in the OTP</string>
     <string name="fa_verification">2FA Verification</string>
+    <string name="mitigationStrategy">Mitigation Strategy</string>
+    <string name="runEngine">Run Engine</string>
+    <string name="manageList">Manage List</string>
     <string name="terms_conditions_text"><![CDATA[
 <b>1. Collection of Personal Data </b>
  <br/>We collect and store personal data, including biometric data, email, and authentication credentials, solely for the purpose of authentication and account security.<br/><br/>

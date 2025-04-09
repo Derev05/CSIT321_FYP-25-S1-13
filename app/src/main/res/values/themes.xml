@@ -1,10 +1,21 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.KotlinBasics" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Enables full-screen (hides system action bar) -->
         <item name="android:windowFullscreen">true</item>
+
+        <!-- Makes status bar transparent -->
         <item name="android:statusBarColor">@android:color/transparent</item>
+
+        <!-- Navigation bar background color -->
         <item name="android:navigationBarColor">@android:color/black</item>
+
+        <!-- App primary colors -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Optional: ensure control styling matches Material design -->
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:windowBackground">@android:color/white</item>
     </style>
 </resources>

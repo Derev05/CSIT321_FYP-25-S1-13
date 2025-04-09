@@ -11,19 +11,25 @@
         android:layout_height="200dp"
         android:background="@drawable/bg_view" />
 
-    <!-- Signed in as Email -->
+    <!-- Signed in as Email (with dynamic auto-resizing text) -->
     <TextView
         android:id="@+id/userEmailText"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Signed in as: syzwanozzie@gmail.com"
         android:textSize="14sp"
         android:textColor="@android:color/white"
         android:textStyle="bold"
         android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="48dp"
         android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true" />
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="10sp"
+        android:autoSizeMaxTextSize="14sp"
+        android:autoSizeStepGranularity="1sp" />
 
     <!-- Menu Button (3-dot icon) -->
     <ImageButton
@@ -122,6 +128,7 @@
                         android:padding="16dp">
 
                         <ImageView
+                            android:id="@+id/mitigationIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/ic_mitigation" />

@@ -34,17 +34,23 @@
                 android:textStyle="bold"
                 android:textColor="@color/blue"/>
 
+            <!-- ✅ Updated Email Field -->
             <EditText
+                android:id="@+id/myUsername"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:id="@+id/myUsername"
-                android:background="@drawable/custom_edittext"
                 android:layout_marginTop="40dp"
-                android:padding="8dp"
-                android:hint="Username"
+                android:background="@drawable/custom_edittext"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:hint="Email"
                 android:drawableLeft="@drawable/ic_person"
+                android:drawablePadding="8dp"
                 android:textColor="@color/black"
-                android:drawablePadding="8dp"/>
+                android:inputType="textEmailAddress"
+                android:singleLine="true"
+                android:ellipsize="none"
+                android:scrollHorizontally="true" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -52,9 +58,9 @@
                 android:layout_marginTop="20dp">
 
                 <EditText
+                    android:id="@+id/myPassword"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:id="@+id/myPassword"
                     android:background="@drawable/custom_edittext"
                     android:inputType="textPassword"
                     android:padding="8dp"
@@ -85,10 +91,10 @@
                 android:textColor="@color/blue" />
 
             <Button
+                android:id="@+id/signInButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:text="Login"
-                android:id="@+id/signInButton"
                 android:textSize="18sp"
                 android:layout_marginTop="30dp"
                 android:backgroundTint="@color/blue"
@@ -129,7 +135,7 @@
         android:minHeight="48dp"
         android:gravity="center"/>
 
-    <!-- Loading Spinner (ProgressBar) -->
+    <!-- Loading Spinner -->
     <ProgressBar
         android:id="@+id/loadingSpinner"
         android:layout_width="wrap_content"

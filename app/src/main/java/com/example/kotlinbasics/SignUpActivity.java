@@ -2,14 +2,15 @@ package com.example.kotlinbasics;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,6 +47,34 @@ public class SignUpActivity extends AppCompatActivity {
 
         togglePassword.setOnClickListener(v -> toggleVisibility(passwordInput, togglePassword));
         toggleConfirmPassword.setOnClickListener(v -> toggleVisibility(confirmPasswordInput, toggleConfirmPassword));
+
+        // 👉 Scroll text to front on focus loss
+        emailInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) emailInput.setSelection(0);
+        });
+        passwordInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) passwordInput.setSelection(0);
+        });
+        confirmPasswordInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) confirmPasswordInput.setSelection(0);
+        });
+
+        // 👉 Tap outside to hide keyboard and scroll all fields to front
+        findViewById(android.R.id.content).setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                View currentFocus = getCurrentFocus();
+                if (currentFocus != null) {
+                    currentFocus.clearFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+
+                    if (currentFocus == emailInput) emailInput.setSelection(0);
+                    if (currentFocus == passwordInput) passwordInput.setSelection(0);
+                    if (currentFocus == confirmPasswordInput) confirmPasswordInput.setSelection(0);
+                }
+            }
+            return false;
+        });
 
         signUpButton.setOnClickListener(v -> {
             String email = emailInput.getText().toString().trim();
@@ -122,7 +151,6 @@ public class SignUpActivity extends AppCompatActivity {
         boolean hasLower = password.matches(".*[a-z].*");
         boolean hasDigit = password.matches(".*\\d.*");
         boolean hasSpecial = password.matches(".*[!@#$%^&*+=?-].*");
-
         return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 

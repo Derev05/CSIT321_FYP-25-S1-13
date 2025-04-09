@@ -1,6 +1,7 @@
 package com.example.kotlinbasics;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -10,7 +11,9 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
+
 import com.google.firebase.auth.*;
 
 import java.util.Random;
@@ -59,6 +62,13 @@ public class LoginActivity extends AppCompatActivity {
         passwordInput.setText(sharedPreferences.getString(KEY_PASSWORD, ""));
         rememberMeCheckBox.setChecked(!sharedPreferences.getString(KEY_EMAIL, "").isEmpty());
 
+        // Reset scroll position when focus changes
+        emailInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                emailInput.setSelection(0);
+            }
+        });
+
         togglePassword.setOnClickListener(v -> {
             if (isPasswordVisible) {
                 passwordInput.setTransformationMethod(PasswordTransformationMethod.getInstance());
@@ -72,6 +82,8 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         loginButton.setOnClickListener(v -> {
+            hideKeyboard();
+
             String email = emailInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
@@ -111,7 +123,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
 
                         if (isNewUser || !otpValid) {
-                            Log.d(TAG, "🛡 OTP required (new user or expired)");
+                            Log.d(TAG, "\uD83D\uDEE1 OTP required (new user or expired)");
                             generateAndSendOTP(email);
                         } else {
                             Log.d(TAG, "✅ OTP session valid. Proceeding to dashboard.");
@@ -131,13 +143,22 @@ public class LoginActivity extends AppCompatActivity {
         forgotPasswordButton.setOnClickListener(v -> startActivity(new Intent(this, ForgotUser.class)));
     }
 
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            view.clearFocus();
+        }
+    }
+
     private void generateAndSendOTP(String email) {
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-        sharedPreferences.edit().putLong(KEY_LAST_OTP_VERIFIED, 0).apply(); // reset OTP validity
+        sharedPreferences.edit().putLong(KEY_LAST_OTP_VERIFIED, 0).apply();
 
         emailExecutor.execute(() -> {
             String subject = "Your OTP Code For BioAuth";
-            String body = "Your OTP is: " + otp + "\n\nUse this code to verify your login. Code will expire in 1 hour.";
+            String body = "Your OTP is: " + otp + "\n\nUse this code to verify your login. After 1 hour, you'll be required to log in using an OTP.";
             GmailSender.sendEmailAsync(email, subject, body, success -> {
                 Log.d(TAG, success ? "✅ OTP email sent" : "❌ OTP email failed");
             });
@@ -147,7 +168,7 @@ public class LoginActivity extends AppCompatActivity {
         intent.putExtra("email", email);
         intent.putExtra("otp", otp);
         startActivity(intent);
-        finish(); // prevents user from going back
+        finish();
     }
 
     private void proceedToDashboard() {

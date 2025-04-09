@@ -26,7 +26,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class activity_terms_condition extends AppCompatActivity {
 
     private InterstitialAd interstitialAd;
-    private String userStatus = "free"; // Default
+    private String userStatus = "free";
+    private Button decline, acknowledge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +38,8 @@ public class activity_terms_condition extends AppCompatActivity {
         termsTextView.setText(Html.fromHtml(getString(R.string.terms_conditions_text), Html.FROM_HTML_MODE_LEGACY));
 
         CheckBox agree = findViewById(R.id.agreeCheckbox);
-        Button acknowledge = findViewById(R.id.acknowledgeButton);
-        Button decline = findViewById(R.id.declineButton);
+        acknowledge = findViewById(R.id.acknowledgeButton);
+        decline = findViewById(R.id.declineButton);
 
         // Initialize Mobile Ads
         MobileAds.initialize(this, initializationStatus -> {});
@@ -67,7 +68,8 @@ public class activity_terms_condition extends AppCompatActivity {
                 return;
             }
 
-            acknowledge.setEnabled(false); // ✅ Prevent spamming multiple clicks
+            acknowledge.setEnabled(false);
+            decline.setEnabled(false);
 
             if ("free".equalsIgnoreCase(userStatus)) {
                 if (interstitialAd != null) {
@@ -84,6 +86,7 @@ public class activity_terms_condition extends AppCompatActivity {
                     });
                     interstitialAd.show(activity_terms_condition.this);
                 } else {
+                    // ✅ Re-added toast and fallback wait
                     showCustomToast(this, "⚠ Ad not ready. Proceeding in 5 seconds...");
                     new Handler().postDelayed(this::goToEnroll, 5000);
                 }
@@ -129,7 +132,6 @@ public class activity_terms_condition extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        startActivity(new Intent(activity_terms_condition.this, MainMenu.class));
-        finish();
+        // ❌ Back button disabled
     }
 }

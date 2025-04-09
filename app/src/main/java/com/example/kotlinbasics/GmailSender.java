@@ -3,7 +3,12 @@ package com.example.kotlinbasics;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+
 import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javax.mail.Authenticator;
 import javax.mail.Message;
 import javax.mail.PasswordAuthentication;
@@ -11,26 +16,27 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class GmailSender {
     private static final String TAG = "GmailSender";
-    private static final String EMAIL_SENDER = "syzwanshukor@gmail.com"; // Your Gmail
-    private static final String EMAIL_PASSWORD = "oyhw krfg kqgd rvac"; // Use App Password
 
-    // ✅ ExecutorService for Running Email Sending in Background
+    // 🔐 Replace with your actual Gmail + App Password
+    private static final String EMAIL_SENDER = "syzwanshukor@gmail.com";
+    private static final String EMAIL_PASSWORD = "oyhw krfg kqgd rvac";
+
+    // 📧 Display name (shows in inbox)
+    private static final String SENDER_NAME = "BioAuth OTP Service";
+
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    // ✅ Generate a 6-digit OTP
+    // 🔢 Generate 6-digit OTP
     public static String generateOTP() {
         Random random = new Random();
         return String.format("%06d", random.nextInt(999999));
     }
 
-    // ✅ Send Email using Background Thread
+    // ✉ Send Email Async
     public static void sendEmailAsync(String recipientEmail, String subject, String messageBody, EmailCallback callback) {
         executorService.execute(() -> {
             boolean success = sendEmail(recipientEmail, subject, messageBody);
@@ -42,16 +48,16 @@ public class GmailSender {
         });
     }
 
-    // ✅ Main Email Sending Function (Runs in Background)
+    // ✉ Send Email (Sync)
     private static boolean sendEmail(String recipientEmail, String subject, String messageBody) {
         try {
             Log.d(TAG, "📧 Preparing to send email to: " + recipientEmail);
 
             Properties props = new Properties();
             props.put("mail.smtp.host", "smtp.gmail.com");
-            props.put("mail.smtp.port", "587"); // Use TLS port
+            props.put("mail.smtp.port", "587"); // TLS port
             props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.starttls.enable", "true"); // Enable TLS security
+            props.put("mail.smtp.starttls.enable", "true");
 
             Session session = Session.getInstance(props, new Authenticator() {
                 @Override
@@ -61,12 +67,16 @@ public class GmailSender {
             });
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(EMAIL_SENDER));
+
+            // ✅ Use sender name with email
+            message.setFrom(new InternetAddress(EMAIL_SENDER, SENDER_NAME));
+
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
             message.setSubject(subject);
             message.setText(messageBody);
 
             Transport.send(message);
+
             Log.d(TAG, "✅ Email successfully sent to: " + recipientEmail);
             return true;
         } catch (Exception e) {
@@ -75,7 +85,7 @@ public class GmailSender {
         }
     }
 
-    // ✅ Callback Interface for Email Sending (Success or Failure)
+    // ✅ Callback
     public interface EmailCallback {
         void onEmailSent(boolean success);
     }

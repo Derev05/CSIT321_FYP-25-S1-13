@@ -23,8 +23,17 @@ public class CoverActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cover);
 
         View startButton = findViewById(R.id.startButton);
+        TextView web = findViewById(R.id.browseWeb);
         reviewSummaryText = findViewById(R.id.reviewSummaryText); // ✅ Clickable review summary
         db = FirebaseFirestore.getInstance();
+
+        web.setOnClickListener(view ->
+        {
+            String url = "https://marcalmeda1999.wixsite.com/bioauthfyp25s113";
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse(url));
+            startActivity(intent);
+        });
 
         // ✅ Start Button: Navigates to LoginActivity
         startButton.setOnClickListener(view -> {

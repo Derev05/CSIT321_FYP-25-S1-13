@@ -22,6 +22,8 @@ public class MainMenu extends AppCompatActivity {
     private TextView userEmailText;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+    private ImageView mitigationIcon;
+    private boolean isPremiumUser = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,21 +37,54 @@ public class MainMenu extends AppCompatActivity {
         userEmailText = findViewById(R.id.userEmailText);
         FirebaseUser user = mAuth.getCurrentUser();
 
+        mitigationIcon = findViewById(R.id.mitigationIcon);
+
         if (user != null) {
             userEmailText.setText("Signed in as: " + user.getEmail());
             userEmailText.setOnClickListener(v -> {
                 Intent profileIntent = new Intent(MainMenu.this, UserProfileActivity.class);
                 startActivity(profileIntent);
             });
+
+            String uid = user.getUid();
+            db.collection("users").document(uid).get()
+                    .addOnSuccessListener(snapshot -> {
+                        if (snapshot.exists()) {
+                            String status = snapshot.getString("status");
+                            isPremiumUser = "premium".equalsIgnoreCase(status);
+                        } else {
+                            isPremiumUser = false;
+                        }
+
+                        // ✅ Set mitigationIcon click listener AFTER user status is known
+                        mitigationIcon.setOnClickListener(v -> {
+                            if (isPremiumUser) {
+                                goToDestination(mitigation_activity.class);
+                            } else {
+                                showCustomToast("Must be a premium user to access this feature.");
+                            }
+                        });
+
+                    })
+                    .addOnFailureListener(e -> {
+                        isPremiumUser = false;
+                        mitigationIcon.setOnClickListener(v -> {
+                            showCustomToast("Failed to check user status.");
+                        });
+                    });
         } else {
             userEmailText.setText("Not Signed In");
+
+            mitigationIcon.setOnClickListener(v -> {
+                showCustomToast("You must be logged in to use this feature.");
+            });
         }
 
-        // 3-dot menu click
+        // 3-dot menu
         findViewById(R.id.menuButton).setOnClickListener(this::showPopupMenu);
 
         ImageView biometric = findViewById(R.id.biometricIcon);
-        biometric.setOnClickListener(v -> checkUserStatusAndProceed());
+        biometric.setOnClickListener(v -> checkUserStatusAndProceed(activity_terms_condition.class));
 
         ImageView review = findViewById(R.id.reviewIcon);
         review.setOnClickListener(v -> {
@@ -58,7 +93,7 @@ public class MainMenu extends AppCompatActivity {
         });
     }
 
-    private void checkUserStatusAndProceed() {
+    private void checkUserStatusAndProceed(Class<?> destinationActivity) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) {
             showCustomToast("User not logged in.");
@@ -71,9 +106,9 @@ public class MainMenu extends AppCompatActivity {
                     if (snapshot.exists()) {
                         String status = snapshot.getString("status");
                         if ("premium".equalsIgnoreCase(status)) {
-                            goToTermsAndConditions(); // Premium flow
+                            goToDestination(destinationActivity);
                         } else {
-                            goToUpgradeScreen(); // Free user upgrade screen
+                            goToUpgradeScreen(destinationActivity);
                         }
                     } else {
                         showCustomToast("User data not found.");
@@ -82,15 +117,15 @@ public class MainMenu extends AppCompatActivity {
                 .addOnFailureListener(e -> showCustomToast("Failed to check status."));
     }
 
-    private void goToTermsAndConditions() {
+    private void goToDestination(Class<?> destinationActivity) {
         if (!isFinishing()) {
-            Intent intent = new Intent(MainMenu.this, activity_terms_condition.class);
+            Intent intent = new Intent(MainMenu.this, destinationActivity);
             startActivity(intent);
             finish();
         }
     }
 
-    private void goToUpgradeScreen() {
+    private void goToUpgradeScreen(Class<?> afterUpgradeTarget) {
         if (!isFinishing()) {
             setContentView(R.layout.upgrade_premium);
 
@@ -98,7 +133,9 @@ public class MainMenu extends AppCompatActivity {
                 startActivity(new Intent(MainMenu.this, CheckoutActivity.class));
             });
 
-            findViewById(R.id.laterText).setOnClickListener(v -> goToTermsAndConditions());
+            findViewById(R.id.laterText).setOnClickListener(v -> {
+                goToDestination(afterUpgradeTarget);
+            });
         }
     }
 
