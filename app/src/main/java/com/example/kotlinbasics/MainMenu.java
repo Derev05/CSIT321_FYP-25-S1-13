@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.MenuItem;
@@ -22,7 +23,7 @@ public class MainMenu extends AppCompatActivity {
     private TextView userEmailText;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private ImageView mitigationIcon;
+    private LinearLayout mitigationIcon;
     private boolean isPremiumUser = false;
 
     @Override
@@ -56,7 +57,7 @@ public class MainMenu extends AppCompatActivity {
                             isPremiumUser = false;
                         }
 
-                        // ✅ Set mitigationIcon click listener AFTER user status is known
+                        //  Set mitigationIcon click listener AFTER user status is known
                         mitigationIcon.setOnClickListener(v -> {
                             if (isPremiumUser) {
                                 goToDestination(mitigation_activity.class);
@@ -83,10 +84,10 @@ public class MainMenu extends AppCompatActivity {
         // 3-dot menu
         findViewById(R.id.menuButton).setOnClickListener(this::showPopupMenu);
 
-        ImageView biometric = findViewById(R.id.biometricIcon);
+        LinearLayout biometric = findViewById(R.id.biometricIcon);
         biometric.setOnClickListener(v -> checkUserStatusAndProceed(activity_terms_condition.class));
 
-        ImageView review = findViewById(R.id.reviewIcon);
+        LinearLayout review = findViewById(R.id.reviewIcon);
         review.setOnClickListener(v -> {
             Intent intent = new Intent(MainMenu.this, reviews_data.class);
             startActivity(intent);

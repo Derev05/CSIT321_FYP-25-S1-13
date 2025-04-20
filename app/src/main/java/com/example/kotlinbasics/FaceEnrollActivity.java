@@ -1,7 +1,8 @@
 package com.example.kotlinbasics;
 
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,6 +28,7 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Rect;
@@ -37,11 +39,17 @@ import org.opencv.objdetect.CascadeClassifier;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.Collections;
+
 
 public class FaceEnrollActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -59,6 +67,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private int absoluteFaceSize;
     private AntiSpoofingClassifier antiSpoofingClassifier;
     private boolean isModelLoaded = false;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,14 +75,13 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         setContentView(R.layout.activity_camera_enroll);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Initialize Firebase if not already initialized
         try {
             FirebaseApp.initializeApp(this);
         } catch (IllegalStateException e) {
-            // Already initialized
             Log.d("Firebase", "Firebase already initialized");
         }
 
+        db = FirebaseFirestore.getInstance();
         javaCameraView = findViewById(R.id.camera_view);
         enrollFaceButton = findViewById(R.id.enroll_face_button);
         modelStatusText = findViewById(R.id.model_status);
@@ -98,6 +106,65 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             }
         });
     }
+
+    private void captureAndVerify() {
+        if (mRgba == null || detectedFace == null) return;
+
+        Log.d("FaceEnroll", "📸 Capturing and cropping face...");
+        Mat croppedFace = new Mat(mRgba, detectedFace);
+        Bitmap faceBitmap = Bitmap.createBitmap(croppedFace.cols(), croppedFace.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(croppedFace, faceBitmap);
+
+        Log.d("FaceEnroll", "🤖 Running anti-spoofing model...");
+        boolean isReal = antiSpoofingClassifier.isRealFace(faceBitmap);
+        float probability = antiSpoofingClassifier.getLastProbability();
+
+        boolean decision = !isReal;
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        String userId = auth.getCurrentUser().getUid();
+        String email = auth.getCurrentUser().getEmail();
+        long timestamp = System.currentTimeMillis();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Singapore"));
+        String readableTime = sdf.format(new Date(timestamp));
+
+        Map<String, Object> log = new HashMap<>();
+        log.put("userId", userId);
+        log.put("email", email);
+        log.put("probability", probability);
+        log.put("decision", decision);
+        log.put("timestamp", timestamp);
+        log.put("readable_time", readableTime);
+
+        Log.d("FaceEnroll", "📦 Log data prepared: " + log.toString());
+
+        // ✅ Save log without deleting any previous ones
+        db.collection("enrol_logs")
+                .document(userId)
+                .set(Collections.singletonMap("initialized", true), com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("enrol_logs")
+                            .document(userId)
+                            .collection("attempts")
+                            .add(log)
+                            .addOnSuccessListener(docRef -> Log.d("FaceEnroll", "✅ Log saved to Firestore"))
+                            .addOnFailureListener(e -> Log.e("FaceEnroll", "❌ Failed to save enrol log", e));
+                });
+
+        if (isReal) {
+            Log.i("AntiSpoof", "✅ Face is REAL with confidence: " + probability);
+            proceedWithEnrollment(faceBitmap);
+        } else {
+            Log.w("AntiSpoof", "⚠️ SPOOF detected with confidence: " + probability);
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Spoof detected! Please use a real face.", Toast.LENGTH_LONG).show());
+        }
+    }
+
+
+
+
 
     private void requestCameraPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -154,6 +221,9 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         mRgba = inputFrame.rgba();
         Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
 
+        Core.flip(mRgba,mRgba,+1);
+        Core.flip(grayFrame,grayFrame,+1);
+
         MatOfRect faces = new MatOfRect();
         if (faceDetector != null) {
             faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
@@ -170,23 +240,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         return mRgba;
     }
 
-    private void captureAndVerify() {
-        if (mRgba == null || detectedFace == null) return;
 
-        Mat croppedFace = new Mat(mRgba, detectedFace);
-        Bitmap faceBitmap = Bitmap.createBitmap(croppedFace.cols(), croppedFace.rows(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(croppedFace, faceBitmap);
-
-        // Run anti-spoofing check
-        boolean isReal = antiSpoofingClassifier.isRealFace(faceBitmap);
-        Log.d("AntiSpoof", "Verification result: " + isReal);
-
-        if (isReal) {
-            proceedWithEnrollment(faceBitmap);
-        } else {
-            runOnUiThread(() -> Toast.makeText(this, "Spoof detected! Please use a real face.", Toast.LENGTH_LONG).show());
-        }
-    }
 
     private void proceedWithEnrollment(Bitmap faceBitmap) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

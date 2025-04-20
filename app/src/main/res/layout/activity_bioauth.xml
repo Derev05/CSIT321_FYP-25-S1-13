@@ -89,6 +89,7 @@
                     app:cardElevation="8dp">
 
                     <LinearLayout
+                        android:id="@+id/biometricIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -96,7 +97,6 @@
                         android:padding="16dp">
 
                         <ImageView
-                            android:id="@+id/biometricIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/ic_finger" />
@@ -121,6 +121,7 @@
                     app:cardElevation="8dp">
 
                     <LinearLayout
+                        android:id="@+id/mitigationIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -128,7 +129,6 @@
                         android:padding="16dp">
 
                         <ImageView
-                            android:id="@+id/mitigationIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/ic_mitigation" />
@@ -194,6 +194,7 @@
                     app:cardElevation="8dp">
 
                     <LinearLayout
+                        android:id="@+id/reviewIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -201,7 +202,6 @@
                         android:padding="16dp">
 
                         <ImageView
-                            android:id="@+id/reviewIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/ic_review" />

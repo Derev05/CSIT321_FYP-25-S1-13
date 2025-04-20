@@ -1,12 +1,10 @@
 package com.example.kotlinbasics;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
-import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
 import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
@@ -23,41 +21,35 @@ import java.nio.channels.FileChannel;
 public class AntiSpoofingClassifier {
     private static final String TAG = "AntiSpoofing";
 
-    // Model configuration - adjust these based on your model's requirements
-    private static final int INPUT_SIZE = 224; // Expected input size
-    private static final float PROBABILITY_THRESHOLD = 0.8f; // Confidence threshold
-    private static final float IMAGE_MEAN = 0.0f; // Normalization mean
-    private static final float IMAGE_STD = 255.0f; // Normalization std
+    private static final int INPUT_SIZE = 224;
+    private static final float PROBABILITY_THRESHOLD = 0.8f;
+    private static final float IMAGE_MEAN = 0.0f;
+    private static final float IMAGE_STD = 255.0f;
 
     private final Interpreter interpreter;
     private final ImageProcessor imageProcessor;
+    private float lastProbability = 0f;
 
     public AntiSpoofingClassifier(File modelFile) throws IOException {
-        // Initialize TFLite interpreter
         Interpreter.Options options = new Interpreter.Options();
-        options.setNumThreads(4); // Use 4 threads for inference
+        options.setNumThreads(4);
         this.interpreter = new Interpreter(loadModelFile(modelFile), options);
 
-        // Create image processor for preprocessing
         this.imageProcessor = new ImageProcessor.Builder()
-                .add(new ResizeWithCropOrPadOp(INPUT_SIZE, INPUT_SIZE)) // Crop or pad to square
+                .add(new ResizeWithCropOrPadOp(INPUT_SIZE, INPUT_SIZE))
                 .add(new ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeOp.ResizeMethod.BILINEAR))
-                .add(new NormalizeOp(IMAGE_MEAN, IMAGE_STD)) // Normalize to [-1,1] or [0,1]
+                .add(new NormalizeOp(IMAGE_MEAN, IMAGE_STD))
                 .build();
 
         Log.d(TAG, "Anti-spoofing model loaded successfully");
     }
 
-    // Load model file from storage
     private MappedByteBuffer loadModelFile(File file) throws IOException {
         FileInputStream inputStream = new FileInputStream(file);
         FileChannel fileChannel = inputStream.getChannel();
-        long startOffset = 0;
-        long declaredLength = fileChannel.size();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
     }
 
-    // Classify whether the face is real or spoof
     public boolean isRealFace(Bitmap bitmap) {
         if (bitmap == null) {
             Log.e(TAG, "Null input bitmap");
@@ -65,33 +57,31 @@ public class AntiSpoofingClassifier {
         }
 
         try {
-            // Convert bitmap to TensorImage
             TensorImage tensorImage = new TensorImage(DataType.FLOAT32);
             tensorImage.load(bitmap);
 
-            // Preprocess the image
             tensorImage = imageProcessor.process(tensorImage);
 
-            // Create output tensor
             TensorBuffer outputBuffer = TensorBuffer.createFixedSize(
                     new int[]{1, 1}, DataType.FLOAT32);
 
-            // Run inference
             interpreter.run(tensorImage.getBuffer(), outputBuffer.getBuffer());
 
-            // Get prediction score (probability of being real)
-            float probability = outputBuffer.getFloatArray()[0];
-            Log.d(TAG, "Anti-spoofing probability: " + probability);
+            lastProbability = outputBuffer.getFloatArray()[0];
+            Log.d(TAG, "Anti-spoofing probability: " + lastProbability);
 
-            // Return true if probability exceeds threshold
-            return probability > PROBABILITY_THRESHOLD;
+            return lastProbability > PROBABILITY_THRESHOLD;
         } catch (Exception e) {
             Log.e(TAG, "Error during anti-spoofing classification", e);
-            return false; // Default to false if error occurs
+            lastProbability = 0f;
+            return false;
         }
     }
 
-    // Close the interpreter when done
+    public float getLastProbability() {
+        return lastProbability;
+    }
+
     public void close() {
         if (interpreter != null) {
             interpreter.close();

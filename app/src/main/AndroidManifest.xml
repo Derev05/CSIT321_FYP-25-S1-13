@@ -136,6 +136,21 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
 
+        <activity android:name=".mitigation_activity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".LogViewerActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".ManageLogsActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
     </application>
 
 </manifest>

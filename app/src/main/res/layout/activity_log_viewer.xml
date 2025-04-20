@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="#4477FF"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- Top Banner -->
+    <View
+        android:id="@+id/top_banner"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:background="@drawable/bg_view" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/headerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select a user to view logs:"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="40dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignTop="@id/top_banner" />
+
+    <!-- Transparent Search Bar -->
+    <SearchView
+        android:id="@+id/searchView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:queryHint="Search email..."
+        android:iconifiedByDefault="false"
+        android:background="@android:color/transparent"
+        android:layout_below="@id/top_banner"
+        android:layout_alignParentStart="true"
+        android:layout_toStartOf="@+id/sortButton"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1" />
+
+    <!-- Sort Button -->
+    <Button
+        android:id="@+id/sortButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="Sort A–Z / Z–A"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:background="@drawable/sort_button_bg"
+        android:elevation="4dp"
+        android:layout_alignTop="@id/searchView"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="12dp" />
+
+    <!-- Log List -->
+    <ListView
+        android:id="@+id/logListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/searchView"
+        android:dividerHeight="1dp"
+        android:padding="8dp"
+        android:background="#FFFFFF"
+        android:layout_marginTop="12dp"
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>
