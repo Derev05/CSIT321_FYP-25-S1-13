@@ -68,4 +68,7 @@ These terms comply with the Personal Data Protection Act (PDPA) of Singapore.<br
     <string name="Biometric">Biometric</string>
     <string name="UserAuth">Authenticate</string>
     <string name="upgrade">Upgrade now</string>
+    <string name="spoofedVsReal">Imagine your phone is using facial recognition to unlock — when it sees your real face, it’s seeing a live, breathing human with tiny movements like blinking, smiling, and head tilts. That’s what we call a genuine face — it has depth, reacts to lighting naturally, and moves in real time.
+
+Now picture someone trying to trick the system using a photo of your face, or maybe even a video on another screen — that’s a spoofed face. Spoofing is basically pretending to be someone else to fool facial recognition. It could be a flat picture, a screen recording, or even a creepy 3D mask. These are common tactics used in biometric attacks</string>
 </resources>

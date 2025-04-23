@@ -2,6 +2,7 @@ package com.example.kotlinbasics;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -18,8 +19,8 @@ public class enroll_auth extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.enroll_authenticate);
 
-        enrollBtn = findViewById(R.id.enroll_face_button);
-        authBtn = findViewById(R.id.auth_face_button);
+        LinearLayout enrollBtn = findViewById(R.id.biometricIcon);
+        LinearLayout authBtn = findViewById(R.id.authenticationIcon);
 
 
         enrollBtn.setOnClickListener(v -> {

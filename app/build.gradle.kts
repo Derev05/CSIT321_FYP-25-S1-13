@@ -47,31 +47,33 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.sun.mail:android-mail:1.6.2")
     implementation("com.sun.mail:android-activation:1.6.2")
-    implementation("org.tensorflow:tensorflow-lite:2.8.0")
+    implementation("org.tensorflow:tensorflow-lite:2.9.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.0")
-    implementation ("com.google.firebase:firebase-storage:20.0.0")
+    implementation("com.google.firebase:firebase-storage:20.0.0")
 
-    // ✅ Use Firebase BOM (Handles Versioning Automatically)
-    implementation(platform("com.google.firebase:firebase-bom:32.2.2")) // Downgrade BOM to support Kotlin 1.9.0
-
-    // ✅ Firebase Dependencies (Remove Explicit Versions)
-    implementation("com.google.firebase:firebase-auth") // ✅ Version managed by BOM
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+    implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth:22.2.0")
+    implementation("com.google.android.gms:play-services-measurement-api:21.0.0")
 
-    // ✅ Downgraded Firebase & Play Services for Kotlin 1.9.0
-    implementation("com.google.firebase:firebase-auth:22.2.0") // Downgrade from 23.2.0
-    implementation("com.google.android.gms:play-services-measurement-api:21.0.0") // Downgrade from 22.3.0
-
-    implementation("org.tensorflow:tensorflow-lite:2.9.0")
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation ("org.opencv:opencv:4.11.0")
+    implementation("org.opencv:opencv:4.11.0")
     implementation("com.google.android.gms:play-services-ads:22.6.0")
-    implementation ("com.microsoft.onnxruntime:onnxruntime-android:latest.release")
-    implementation ("com.google.code.gson:gson:2.12.1")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:latest.release")
+    implementation("com.google.code.gson:gson:2.12.1")
+
+    implementation("com.airbnb.android:lottie:6.0.0") // ✅ Lottie animation support
+
+    // ✅ Glide in Kotlin DSL
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
+

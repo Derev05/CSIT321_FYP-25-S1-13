@@ -26,10 +26,18 @@ public class MainMenu extends AppCompatActivity {
     private LinearLayout mitigationIcon;
     private boolean isPremiumUser = false;
 
+    private com.airbnb.lottie.LottieAnimationView mainMenuLoading;
+
+    private View mainRoot;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bioauth);
+        mainRoot = findViewById(R.id.mainRoot);
+        mainMenuLoading = findViewById(R.id.mainMenuLoading);
+
 
         // Firebase init
         mAuth = FirebaseAuth.getInstance();
@@ -60,7 +68,7 @@ public class MainMenu extends AppCompatActivity {
                         //  Set mitigationIcon click listener AFTER user status is known
                         mitigationIcon.setOnClickListener(v -> {
                             if (isPremiumUser) {
-                                goToDestination(mitigation_activity.class);
+                                showLoadingThenNavigate(mitigation_activity.class);
                             } else {
                                 showCustomToast("Must be a premium user to access this feature.");
                             }
@@ -88,10 +96,8 @@ public class MainMenu extends AppCompatActivity {
         biometric.setOnClickListener(v -> checkUserStatusAndProceed(activity_terms_condition.class));
 
         LinearLayout review = findViewById(R.id.reviewIcon);
-        review.setOnClickListener(v -> {
-            Intent intent = new Intent(MainMenu.this, reviews_data.class);
-            startActivity(intent);
-        });
+        review.setOnClickListener(v -> showLoadingThenNavigate(reviews_data.class));
+
     }
 
     private void checkUserStatusAndProceed(Class<?> destinationActivity) {
@@ -107,7 +113,7 @@ public class MainMenu extends AppCompatActivity {
                     if (snapshot.exists()) {
                         String status = snapshot.getString("status");
                         if ("premium".equalsIgnoreCase(status)) {
-                            goToDestination(destinationActivity);
+                            showLoadingThenNavigate(destinationActivity);
                         } else {
                             goToUpgradeScreen(destinationActivity);
                         }
@@ -128,17 +134,46 @@ public class MainMenu extends AppCompatActivity {
 
     private void goToUpgradeScreen(Class<?> afterUpgradeTarget) {
         if (!isFinishing()) {
-            setContentView(R.layout.upgrade_premium);
+            // Show loading animation first
+            mainMenuLoading.setVisibility(View.VISIBLE);
+            mainMenuLoading.setAnimation("loading.json");
+            mainMenuLoading.playAnimation();
 
-            findViewById(R.id.upgradeNowBtn).setOnClickListener(v -> {
-                startActivity(new Intent(MainMenu.this, CheckoutActivity.class));
-            });
+            // Disable interactions while loading
+            findViewById(R.id.biometricIcon).setEnabled(false);
+            findViewById(R.id.mitigationIcon).setEnabled(false);
+            findViewById(R.id.reviewIcon).setEnabled(false);
+            findViewById(R.id.menuButton).setEnabled(false);
+            findViewById(R.id.userEmailText).setEnabled(false);
+            mainRoot.setClickable(true);
 
-            findViewById(R.id.laterText).setOnClickListener(v -> {
-                goToDestination(afterUpgradeTarget);
-            });
+            // Delay then swap layout
+            new android.os.Handler().postDelayed(() -> {
+                mainMenuLoading.cancelAnimation();
+                mainMenuLoading.setVisibility(View.GONE);
+
+                // Inflate upgrade layout
+                setContentView(R.layout.upgrade_premium);
+
+                // Now re-bind button IDs from new layout
+                findViewById(R.id.upgradeNowBtn).setOnClickListener(v -> {
+                    startActivity(new Intent(MainMenu.this, CheckoutActivity.class));
+                });
+
+                findViewById(R.id.laterText).setOnClickListener(v -> {
+                    // Show toast or ad fallback
+                    showCustomToast("Continuing as free user...");
+                    new android.os.Handler().postDelayed(() -> {
+                        Intent intent = new Intent(MainMenu.this, afterUpgradeTarget);
+                        startActivity(intent);
+                        finish(); // optional
+                    }, 1000);
+                });
+
+            }, 1200); // 1.2 sec delay to finish animation
         }
     }
+
 
     private void showPopupMenu(View view) {
         PopupMenu popup = new PopupMenu(this, view);
@@ -172,6 +207,46 @@ public class MainMenu extends AppCompatActivity {
         toast.setGravity(Gravity.BOTTOM, 0, 150);
         toast.show();
     }
+
+    private void showLoadingThenNavigate(Class<?> destinationActivity) {
+        if (mainMenuLoading.getVisibility() == View.VISIBLE) return; // Prevent spam
+
+        // ✅ Show animation
+        mainMenuLoading.setVisibility(View.VISIBLE);
+        mainMenuLoading.setAnimation("loading.json");
+        mainMenuLoading.playAnimation();
+
+        // ✅ Disable interaction for all clickables
+        findViewById(R.id.biometricIcon).setEnabled(false);
+        findViewById(R.id.mitigationIcon).setEnabled(false);
+        findViewById(R.id.reviewIcon).setEnabled(false);
+        findViewById(R.id.menuButton).setEnabled(false);
+        findViewById(R.id.userEmailText).setEnabled(false); //  Disable email click
+        mainRoot.setClickable(true); //  Absorb touches
+
+        new android.os.Handler().postDelayed(() -> {
+            //  Hide animation
+            mainMenuLoading.cancelAnimation();
+            mainMenuLoading.setVisibility(View.GONE);
+
+            //  Re-enable interaction
+            findViewById(R.id.biometricIcon).setEnabled(true);
+            findViewById(R.id.mitigationIcon).setEnabled(true);
+            findViewById(R.id.reviewIcon).setEnabled(true);
+            findViewById(R.id.menuButton).setEnabled(true);
+            findViewById(R.id.userEmailText).setEnabled(true);
+            mainRoot.setClickable(false);
+
+            // Navigate
+            Intent intent = new Intent(MainMenu.this, destinationActivity);
+            startActivity(intent);
+
+        }, 1000);
+    }
+
+
+
+
 
     @Override
     public void onBackPressed() {

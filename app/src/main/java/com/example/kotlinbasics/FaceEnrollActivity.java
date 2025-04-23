@@ -28,27 +28,21 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
+import org.opencv.core.*;
+
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.Collections;
+import java.util.*;
+
+
+
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.DocumentSnapshot;
+
 
 
 public class FaceEnrollActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
@@ -56,7 +50,6 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final String MODEL_NAME = "models/anti_spoofing_model.tflite";
     private static final String MODEL_VERSION_FILE = "models/model_version.txt";
-    private static final String KNOWN_MODEL_HASH = null;
 
     private JavaCameraView javaCameraView;
     private Button enrollFaceButton;
@@ -69,19 +62,18 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private boolean isModelLoaded = false;
     private FirebaseFirestore db;
 
+    private int consecutiveSpoofCount = 0;
+    private static final int SPOOF_THRESHOLD = 3;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_enroll);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        try {
-            FirebaseApp.initializeApp(this);
-        } catch (IllegalStateException e) {
-            Log.d("Firebase", "Firebase already initialized");
-        }
-
+        FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
+
         javaCameraView = findViewById(R.id.camera_view);
         enrollFaceButton = findViewById(R.id.enroll_face_button);
         modelStatusText = findViewById(R.id.model_status);
@@ -89,20 +81,15 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         if (!OpenCVLoader.initLocal()) {
             Log.e("OpenCV", "Initialization failed.");
         } else {
-            Log.d("OpenCV", "Initialization successful.");
             requestCameraPermission();
             checkModelStatus();
         }
 
         enrollFaceButton.setOnClickListener(v -> {
-            if (detectedFace != null) {
-                if (isModelLoaded) {
-                    captureAndVerify();
-                } else {
-                    Toast.makeText(this, "Security features still loading...", Toast.LENGTH_SHORT).show();
-                }
+            if (detectedFace != null && isModelLoaded) {
+                captureAndVerify();
             } else {
-                Toast.makeText(this, "No face detected, try again.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No face or model not ready.", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -110,16 +97,91 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private void captureAndVerify() {
         if (mRgba == null || detectedFace == null) return;
 
-        Log.d("FaceEnroll", "📸 Capturing and cropping face...");
         Mat croppedFace = new Mat(mRgba, detectedFace);
         Bitmap faceBitmap = Bitmap.createBitmap(croppedFace.cols(), croppedFace.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(croppedFace, faceBitmap);
 
-        Log.d("FaceEnroll", "🤖 Running anti-spoofing model...");
         boolean isReal = antiSpoofingClassifier.isRealFace(faceBitmap);
         float probability = antiSpoofingClassifier.getLastProbability();
 
-        boolean decision = !isReal;
+        if (isReal) {
+            Log.i("AntiSpoof", "✅ Real face. Confidence: " + probability);
+            consecutiveSpoofCount = 0;
+            proceedWithEnrollment(faceBitmap, false); // real face, no log needed
+        } else {
+            Log.w("AntiSpoof", "⚠️ Spoof detected. Confidence: " + probability);
+            consecutiveSpoofCount++;
+            runOnUiThread(() -> Toast.makeText(this, "Spoof detected! Attempt " + consecutiveSpoofCount, Toast.LENGTH_SHORT).show());
+
+            if (consecutiveSpoofCount >= SPOOF_THRESHOLD) {
+                if (javaCameraView != null) javaCameraView.disableView(); // freeze view
+
+                runOnUiThread(() -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Are you wearing specs?")
+                        .setMessage("You were flagged 3 times. If you're real, tap YES to continue.")
+                        .setCancelable(false)
+                        .setPositiveButton("YES", (dialog, which) -> {
+                            FirebaseAuth auth = FirebaseAuth.getInstance();
+                            String userId = auth.getCurrentUser().getUid();
+
+                            db.collection("enrol_logs")
+                                    .document(userId)
+                                    .collection("attempts")
+                                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                                    .limit(3)
+                                    .get()
+                                    .addOnSuccessListener(snapshot -> {
+                                        int deleted = 0;
+                                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                                            Boolean decision = doc.getBoolean("decision");
+                                            Boolean isFalseNegative = doc.getBoolean("false_negative");
+
+                                            if (Boolean.TRUE.equals(decision) && !Boolean.TRUE.equals(isFalseNegative) && deleted < 2) {
+                                                doc.getReference().delete();
+                                                deleted++;
+                                            }
+                                        }
+
+                                        // ✅ Save the 3rd spoof attempt as a false negative
+                                        saveLog(probability, true, true);
+                                        proceedWithEnrollment(faceBitmap, true);
+                                        consecutiveSpoofCount = 0;
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("FaceEnroll", "❌ Failed to delete previous spoof logs", e);
+                                        saveLog(probability, true, true); // still log false negative
+                                        proceedWithEnrollment(faceBitmap, true);
+                                        consecutiveSpoofCount = 0;
+                                    });
+                        })
+                        .setNegativeButton("NO", (dialog, which) -> {
+                            enableCamera(); // let user retry
+                            consecutiveSpoofCount = 0;
+                        })
+                        .show());
+
+            } else {
+                // ✅ Save 1st and 2nd spoof logs normally
+                saveLog(probability, true, false);
+            }
+        }
+    }
+
+
+
+    private void proceedWithEnrollment(Bitmap faceBitmap, boolean fromFalseNegative) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        faceBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+
+        Intent intent = new Intent(FaceEnrollActivity.this, FaceConfirmActivity.class);
+        intent.putExtra("face", new SerializableRect(detectedFace));
+        intent.putExtra("image", byteArray);
+        intent.putExtra("fromFalseNegative", fromFalseNegative); // ✅ flag to prevent duplicate
+        startActivity(intent);
+    }
+
+    private void saveLog(float probability, boolean isSpoof, boolean isFalseNegative) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         String userId = auth.getCurrentUser().getUid();
         String email = auth.getCurrentUser().getEmail();
@@ -133,114 +195,23 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         log.put("userId", userId);
         log.put("email", email);
         log.put("probability", probability);
-        log.put("decision", decision);
+        log.put("decision", isSpoof);
         log.put("timestamp", timestamp);
         log.put("readable_time", readableTime);
+        if (isFalseNegative) {
+            log.put("false_negative", true);
+        }
 
-        Log.d("FaceEnroll", "📦 Log data prepared: " + log.toString());
-
-        // ✅ Save log without deleting any previous ones
         db.collection("enrol_logs")
                 .document(userId)
-                .set(Collections.singletonMap("initialized", true), com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    db.collection("enrol_logs")
-                            .document(userId)
-                            .collection("attempts")
-                            .add(log)
-                            .addOnSuccessListener(docRef -> Log.d("FaceEnroll", "✅ Log saved to Firestore"))
-                            .addOnFailureListener(e -> Log.e("FaceEnroll", "❌ Failed to save enrol log", e));
-                });
-
-        if (isReal) {
-            Log.i("AntiSpoof", "✅ Face is REAL with confidence: " + probability);
-            proceedWithEnrollment(faceBitmap);
-        } else {
-            Log.w("AntiSpoof", "⚠️ SPOOF detected with confidence: " + probability);
-            runOnUiThread(() ->
-                    Toast.makeText(this, "Spoof detected! Please use a real face.", Toast.LENGTH_LONG).show());
-        }
+                .set(Collections.singletonMap("initialized", true), SetOptions.merge())
+                .addOnSuccessListener(aVoid -> db.collection("enrol_logs")
+                        .document(userId)
+                        .collection("attempts")
+                        .add(log)
+                        .addOnSuccessListener(docRef -> Log.d("FaceEnroll", "✅ Spoof/FalseNegative log saved"))
+                        .addOnFailureListener(e -> Log.e("FaceEnroll", "❌ Failed to save log", e)));
     }
-
-
-
-
-
-    private void requestCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
-        } else {
-            enableCamera();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enableCamera();
-            } else {
-                Toast.makeText(this, "Camera permission denied.", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private void enableCamera() {
-        javaCameraView.setCameraPermissionGranted();
-        javaCameraView.setCameraIndex(1);
-        javaCameraView.setCvCameraViewListener(this);
-        javaCameraView.enableView();
-        loadCascade();
-    }
-
-    @Override
-    public void onCameraViewStarted(int width, int height) {
-        mRgba = new Mat();
-        grayFrame = new Mat();
-        absoluteFaceSize = (int) (height * 0.3);
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int screenWidth = displayMetrics.widthPixels;
-        int screenHeight = displayMetrics.heightPixels;
-
-        javaCameraView.setMaxFrameSize(screenWidth, screenHeight);
-    }
-
-    @Override
-    public void onCameraViewStopped() {
-        mRgba.release();
-        grayFrame.release();
-    }
-
-    @Override
-    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
-        Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
-
-        Core.flip(mRgba,mRgba,+1);
-        Core.flip(grayFrame,grayFrame,+1);
-
-        MatOfRect faces = new MatOfRect();
-        if (faceDetector != null) {
-            faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
-                    new Size(absoluteFaceSize, absoluteFaceSize), new Size());
-        }
-
-        Rect[] facesArray = faces.toArray();
-        if (facesArray.length > 0) {
-            detectedFace = facesArray[0];
-            Imgproc.rectangle(mRgba, detectedFace.tl(), detectedFace.br(), new Scalar(255, 255, 0, 255), 3);
-        } else {
-            detectedFace = null;
-        }
-        return mRgba;
-    }
-
-
 
     private void proceedWithEnrollment(Bitmap faceBitmap) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -251,6 +222,22 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         intent.putExtra("face", new SerializableRect(detectedFace));
         intent.putExtra("image", byteArray);
         startActivity(intent);
+    }
+
+    private void requestCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+        } else {
+            enableCamera();
+        }
+    }
+
+    private void enableCamera() {
+        javaCameraView.setCameraPermissionGranted();
+        javaCameraView.setCameraIndex(1);
+        javaCameraView.setCvCameraViewListener(this);
+        javaCameraView.enableView();
+        loadCascade();
     }
 
     private void loadCascade() {
@@ -272,76 +259,65 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             faceDetector = new CascadeClassifier(cascadeFile.getAbsolutePath());
             if (faceDetector.empty()) {
                 Log.e("Cascade", "Failed to load face detector.");
-            } else {
-                Log.d("Cascade", "Face detector loaded successfully.");
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
-            Log.e("Cascade", "Error loading cascade:" + e.getMessage());
+            Log.e("Cascade", "Error loading cascade", e);
         }
     }
+
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        mRgba = new Mat();
+        grayFrame = new Mat();
+        absoluteFaceSize = (int) (height * 0.3);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        javaCameraView.setMaxFrameSize(displayMetrics.widthPixels, displayMetrics.heightPixels);
+    }
+
+    @Override
+    public void onCameraViewStopped() {
+        mRgba.release();
+        grayFrame.release();
+    }
+
+    @Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        mRgba = inputFrame.rgba();
+        grayFrame = new Mat();
+        Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
+
+        Core.flip(mRgba, mRgba, +1);
+        Core.flip(grayFrame, grayFrame, +1);
+
+        MatOfRect faces = new MatOfRect();
+        if (faceDetector != null) {
+            faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
+                    new Size(absoluteFaceSize, absoluteFaceSize), new Size());
+        }
+
+        Rect[] facesArray = faces.toArray();
+        if (facesArray.length > 0) {
+            detectedFace = facesArray[0];
+            Imgproc.rectangle(mRgba, detectedFace.tl(), detectedFace.br(), new Scalar(255, 255, 0, 255), 3);
+        } else {
+            detectedFace = null;
+        }
+
+        return mRgba;
+    }
+
+    // === Model loading ===
 
     private void checkModelStatus() {
-        try {
-            // Verify Firebase is initialized
-            FirebaseApp.getInstance();
-
-            if (isModelDownloaded()) { // Just check if file exists
-                Log.d("ModelCheck", "Model exists locally");
-                initializeModel();
-            } else {
-                Log.d("ModelCheck", "Downloading new model");
-                downloadAntiSpoofingModel();
-            }
-            checkModelVersion();
-        } catch (IllegalStateException e) {
-            Log.e("Firebase", "Firebase not initialized", e);
-            updateModelStatus("Security system error");
-            Toast.makeText(this, "Security system initialization failed", Toast.LENGTH_LONG).show();
+        if (isModelDownloaded()) {
+            initializeModel();
+        } else {
+            downloadAntiSpoofingModel();
         }
-    }
-
-    private void downloadAntiSpoofingModel() {
-        updateModelStatus("Preparing download...");
-
-        try {
-            StorageReference modelRef = FirebaseStorage.getInstance().getReference(MODEL_NAME);
-
-            // First verify the file exists
-            modelRef.getMetadata().addOnSuccessListener(metadata -> {
-                updateModelStatus("Downloading...");
-                File localFile = getModelFile();
-
-                // Ensure directory exists
-                File parent = localFile.getParentFile();
-                if (parent != null) parent.mkdirs();
-
-                modelRef.getFile(localFile)
-                        .addOnProgressListener(taskSnapshot -> {
-                            double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                            updateModelStatus(String.format("Downloading %.1f%%", progress));
-                        })
-                        .addOnSuccessListener(taskSnapshot -> {
-                            if (localFile.exists() && localFile.length() > 0) {
-                                updateModelStatus("Verifying...");
-                                initializeModel();
-                            } else {
-                                updateModelStatus("Download failed - empty file");
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Log.e("Download", "Final download failed", e);
-                            updateModelStatus("Download failed");
-                        });
-            }).addOnFailureListener(e -> {
-                Log.e("Download", "Metadata check failed", e);
-                updateModelStatus("Model not found");
-            });
-        } catch (Exception e) {
-            Log.e("Download", "Setup failed", e);
-            updateModelStatus("System error");
-        }
+        checkModelVersion();
     }
 
     private void initializeModel() {
@@ -349,34 +325,28 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             antiSpoofingClassifier = new AntiSpoofingClassifier(getModelFile());
             isModelLoaded = true;
             updateModelStatus("Security active");
-            Log.d("ModelInit", "Model initialized successfully");
         } catch (IOException e) {
-            Log.e("ModelInit", "Initialization failed", e);
             updateModelStatus("Security initialization failed");
-            isModelLoaded = false;
         }
     }
 
     private File getModelFile() {
-        // Extract just the filename
-        String fileName = MODEL_NAME.substring(MODEL_NAME.lastIndexOf('/') + 1);
-        return new File(getFilesDir(), fileName);
+        return new File(getFilesDir(), MODEL_NAME.substring(MODEL_NAME.lastIndexOf('/') + 1));
     }
 
     private boolean isModelDownloaded() {
-        return getModelFile().exists();
+        File modelFile = getModelFile();
+        return modelFile.exists() && modelFile.length() > 0 && modelFile.getName().endsWith(".tflite");
     }
 
-    private boolean verifyModelFile(File modelFile) {
-        try {
-            // Basic sanity checks instead of hash verification
-            return modelFile.exists() &&
-                    modelFile.length() > 0 && // Not empty
-                    modelFile.getName().endsWith(".tflite"); // Correct extension
-        } catch (Exception e) {
-            Log.e("ModelCheck", "File verification error", e);
-            return false;
-        }
+    private void downloadAntiSpoofingModel() {
+        updateModelStatus("Downloading model...");
+        StorageReference modelRef = FirebaseStorage.getInstance().getReference(MODEL_NAME);
+        File localFile = getModelFile();
+
+        modelRef.getFile(localFile)
+                .addOnSuccessListener(taskSnapshot -> initializeModel())
+                .addOnFailureListener(e -> updateModelStatus("Download failed"));
     }
 
     private void checkModelVersion() {
@@ -384,25 +354,10 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                 .getBytes(1024)
                 .addOnSuccessListener(bytes -> {
                     String remoteVersion = new String(bytes);
-                    String localVersion = getPreferences(MODE_PRIVATE)
-                            .getString("model_version", "0");
-
+                    String localVersion = getPreferences(MODE_PRIVATE).getString("model_version", "0");
                     if (!remoteVersion.equals(localVersion)) {
-                        Log.d("VersionCheck", "New version available: " + remoteVersion);
                         downloadAntiSpoofingModel();
                     }
-                })
-                .addOnFailureListener(e -> Log.e("VersionCheck", "Version check failed", e));
-    }
-
-    private void saveModelVersion() {
-        FirebaseStorage.getInstance().getReference(MODEL_VERSION_FILE)
-                .getBytes(1024)
-                .addOnSuccessListener(bytes -> {
-                    String version = new String(bytes);
-                    getPreferences(MODE_PRIVATE).edit()
-                            .putString("model_version", version)
-                            .apply();
                 });
     }
 
@@ -413,12 +368,8 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     @Override
     protected void onResume() {
         super.onResume();
-        if (OpenCVLoader.initLocal()) {
-            if (javaCameraView != null) {
-                javaCameraView.enableView();
-            }
-        } else {
-            Log.e("OpenCV", "Initialization failed.");
+        if (OpenCVLoader.initLocal() && javaCameraView != null) {
+            javaCameraView.enableView();
         }
     }
 

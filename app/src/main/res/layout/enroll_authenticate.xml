@@ -61,7 +61,7 @@
                     app:cardElevation="8dp">
 
                     <LinearLayout
-                        android:id="@+id/enroll_face_button"
+                        android:id="@+id/biometricIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -69,7 +69,6 @@
                         android:padding="16dp">
 
                         <ImageView
-                            android:id="@+id/biometricIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/ic_finger"/>
@@ -94,7 +93,7 @@
                     app:cardElevation="8dp">
 
                     <LinearLayout
-                        android:id="@+id/auth_face_button"
+                        android:id="@+id/authenticationIcon"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -102,7 +101,6 @@
                         android:padding="16dp">
 
                         <ImageView
-                            android:id="@+id/authenticationIcon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
                             android:src="@drawable/auth_icon"/>
@@ -126,4 +124,4 @@
         </LinearLayout>
     </ScrollView>
 
-   </RelativeLayout>
+</RelativeLayout>

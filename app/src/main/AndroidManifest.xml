@@ -22,10 +22,17 @@
     <uses-permission android:name="android.permission.SEND_SMS"/>
     <uses-permission android:name="android.permission.CALL_PHONE"/> <!-- (If needed for phone call OTPs) -->
 
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+
     <!-- 🔹 Ensure Telephony Feature Exists but Not Required -->
     <uses-feature android:name="android.hardware.telephony" android:required="false"/>
 
     <application
+
+        android:hardwareAccelerated="true"
+
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -93,7 +100,7 @@
             android:theme="@style/Theme.KotlinBasics"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
-        
+
         <activity android:name=".reviews_data"
             android:exported="true"
             android:theme="@style/Theme.KotlinBasics"
@@ -151,6 +158,19 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
 
+        <activity android:name=".education_activity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+        <activity android:name=".DeleteLogsActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
+
     </application>
+
+
 
 </manifest>

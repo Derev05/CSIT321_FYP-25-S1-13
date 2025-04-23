@@ -1,0 +1,78 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:id="@+id/headerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🗑 Tap to delete logs"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <Spinner
+        android:id="@+id/logTypeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp" />
+
+    <SearchView
+        android:id="@+id/searchView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:queryHint="Search logs by date..." />
+
+    <ListView
+        android:id="@+id/logListView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#CCCCCC"
+        android:dividerHeight="1dp" />
+
+    <Button
+        android:id="@+id/clearLogsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🧹 Clear All Logs"
+        android:layout_marginTop="10dp"
+        android:textSize="18dp"
+        android:backgroundTint="#FF4444"
+        android:textColor="#FFFFFF"/>
+
+    <Button
+        android:id="@+id/deleteSelectedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete Selected"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="#FF4444"
+        android:textColor="#FFFFFF"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/selectAllButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select All"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="#3366FF"
+        android:textColor="#FFFFFF"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/cancelSelectButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel Selection"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="#888888"
+        android:textColor="#FFFFFF"
+        android:visibility="gone" />
+
+
+</LinearLayout>

@@ -11,7 +11,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.content.Intent;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -41,6 +41,19 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.Collections;
+
 
 public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
@@ -149,6 +162,9 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
         mRgba = inputFrame.rgba();
         Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
 
+        Core.flip(mRgba,mRgba,+1);
+        Core.flip(grayFrame,grayFrame,+1);
+
         MatOfRect faces = new MatOfRect();
         if (faceDetector != null) {
             faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
@@ -207,22 +223,57 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
 
                 //Verify user
                 embedManager.verifyFace(newEmbedding, userId, new FaceEmbedManager.VerificationCallback() {
+
                     @Override
                     public void onVerificationResult(boolean isVerified, float similarityScore) {
+                        String resultMessage = isVerified ? "Match with the enrollment face" : "No match";
+                        String scoreFormatted = String.format("%.2f", similarityScore * 100);
+
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            String uid = user.getUid();
+                            String email = user.getEmail();
+                            long timestamp = System.currentTimeMillis();
+
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault());
+                            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Singapore"));
+                            String readableTime = sdf.format(new Date(timestamp));
+
+                            Map<String, Object> log = new HashMap<>();
+                            log.put("userId", uid);
+                            log.put("email", email);
+                            log.put("similarityScore", similarityScore);
+                            log.put("formattedScore", scoreFormatted + "%");
+                            log.put("verified", resultMessage);
+                            log.put("timestamp", timestamp);
+                            log.put("readable_time", readableTime);
+
+                            FirebaseFirestore.getInstance()
+                                    .collection("auth_logs")
+                                    .document(uid)
+                                    .collection("attempts")
+                                    .add(log)
+                                    .addOnSuccessListener(ref -> Log.d("FaceAuth", "✅ Auth log saved"))
+                                    .addOnFailureListener(e -> Log.e("FaceAuth", "❌ Failed to save auth log", e));
+                        }
+
                         runOnUiThread(() -> {
+                            String toastMsg = isVerified ?
+                                    "✅ Authenticated (Score: " + scoreFormatted + "%)" :
+                                    "❌ Failed (Score: " + scoreFormatted + "%)";
+                            Toast.makeText(FaceAuthActivity.this, toastMsg, Toast.LENGTH_SHORT).show();
+
                             if (isVerified) {
-                                Toast.makeText(FaceAuthActivity.this,
-                                        "User authenticated " +
-                                                " (Score: " + String.format("%.2f", similarityScore) + ")",
-                                        Toast.LENGTH_SHORT).show();
-                                // Proceed with authenticated flow
-                            } else {
-                                Toast.makeText(FaceAuthActivity.this,
-                                        "Verification failed (Score: " + String.format("%.2f", similarityScore) + ")",
-                                        Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(FaceAuthActivity.this, enroll_auth.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                startActivity(intent);
+                                finish();
                             }
                         });
                     }
+
+
+
 
                     @Override
                     public void onVerificationError(String errorMessage) {

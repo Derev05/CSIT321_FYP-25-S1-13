@@ -1,40 +1,68 @@
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
     android:background="@drawable/loginbkg"
     tools:context=".LoginActivity">
 
+    <!-- 🧸 Idle Mascot -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/mascotIdle"
+        android:layout_width="135dp"
+        android:layout_height="79dp"
+        android:layout_marginTop="20dp"
+        app:lottie_autoPlay="true"
+        app:lottie_fileName="idle.json"
+        app:lottie_loop="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 🟡 Reaction Mascot (nod/shake) -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/mascotReaction"
+        android:layout_width="135dp"
+        android:layout_height="79dp"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 🟦 Login Card -->
     <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
+        android:id="@+id/loginCard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="30dp"
         app:cardCornerRadius="30dp"
-        app:cardElevation="20dp">
+        app:cardElevation="20dp"
+        app:layout_constraintTop_toBottomOf="@id/mascotIdle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_gravity="center_horizontal"
             android:padding="24dp"
             android:background="@drawable/custom_edittext">
 
             <TextView
+                android:id="@+id/loginText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Login"
-                android:id="@+id/loginText"
                 android:textSize="36sp"
                 android:textAlignment="center"
                 android:textStyle="bold"
                 android:textColor="@color/blue"/>
 
-            <!-- ✅ Updated Email Field -->
+            <!-- Email -->
             <EditText
                 android:id="@+id/myUsername"
                 android:layout_width="match_parent"
@@ -48,10 +76,9 @@
                 android:drawablePadding="8dp"
                 android:textColor="@color/black"
                 android:inputType="textEmailAddress"
-                android:singleLine="true"
-                android:ellipsize="none"
-                android:scrollHorizontally="true" />
+                android:singleLine="true" />
 
+            <!-- Password Field -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
@@ -81,15 +108,16 @@
                     android:layout_marginEnd="8dp"/>
             </RelativeLayout>
 
+            <!-- Remember Me -->
             <CheckBox
                 android:id="@+id/checkBox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
                 android:layout_marginTop="20dp"
                 android:text="Remember Me"
                 android:textColor="@color/blue" />
 
+            <!-- Login Button -->
             <Button
                 android:id="@+id/signInButton"
                 android:layout_width="match_parent"
@@ -99,49 +127,62 @@
                 android:layout_marginTop="30dp"
                 android:backgroundTint="@color/blue"
                 app:cornerRadius="20dp"/>
-
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Sign Up Now Link -->
+    <!-- Sign Up Link -->
     <TextView
         android:id="@+id/signUpButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
         android:text="Not yet registered? Sign Up Now"
         android:textSize="14sp"
-        android:textAlignment="center"
         android:textColor="@color/blue"
-        android:layout_marginBottom="20dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:minHeight="48dp"
-        android:gravity="center"/>
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/loginCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Forgot Password Link -->
+    <!-- Forgot Password -->
     <TextView
         android:id="@+id/forgotButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
         android:text="Forgot Password?"
         android:textSize="14sp"
-        android:textAlignment="center"
         android:textColor="@color/blue"
-        android:layout_marginBottom="20dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:minHeight="48dp"
-        android:gravity="center"/>
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/signUpButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Loading Spinner -->
+
+    <!-- 🔄 Loading Mascot (Larger and Centered) -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/loadingMascot"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:visibility="gone"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true"
+        app:lottie_fileName="loading.json"
+        app:layout_constraintTop_toBottomOf="@id/loginCard"
+        app:layout_constraintBottom_toTopOf="@id/loadingSpinner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+
+    <!-- Spinner -->
     <ProgressBar
         android:id="@+id/loadingSpinner"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
         style="?android:attr/progressBarStyleLarge"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"/>
-</LinearLayout>
+        app:layout_constraintTop_toBottomOf="@id/forgotButton"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="10dp"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

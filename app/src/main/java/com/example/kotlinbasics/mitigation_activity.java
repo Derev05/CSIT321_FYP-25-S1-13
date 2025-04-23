@@ -13,20 +13,21 @@ public class mitigation_activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.engine_manage);
 
-        // ✅ Run Engine button logic
+        // ✅ Run Engine opens ManageLogsActivity
         LinearLayout engine = findViewById(R.id.run_engineButton);
         engine.setOnClickListener(v -> {
-            Intent intent = new Intent(mitigation_activity.this, LogViewerActivity.class);
-            startActivity(intent);
-        });
-
-        // ✅ Manage List button now opens ManageLogsActivity
-        LinearLayout manage = findViewById(R.id.manageListButton);
-        manage.setOnClickListener(v -> {
             Intent intent = new Intent(mitigation_activity.this, ManageLogsActivity.class);
             startActivity(intent);
         });
+
+        // ✅ Manage List opens ManageLogsActivity too
+        LinearLayout manage = findViewById(R.id.manageListButton);
+        manage.setOnClickListener(v -> {
+            Intent intent = new Intent(mitigation_activity.this, DeleteLogsActivity.class);
+            startActivity(intent);
+        });
     }
+
 
     @Override
     public void onBackPressed() {

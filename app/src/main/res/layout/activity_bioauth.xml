@@ -1,4 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -11,7 +12,7 @@
         android:layout_height="200dp"
         android:background="@drawable/bg_view" />
 
-    <!-- Signed in as Email (with dynamic auto-resizing text) -->
+    <!-- Signed in as Email -->
     <TextView
         android:id="@+id/userEmailText"
         android:layout_width="match_parent"
@@ -56,7 +57,7 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/userEmailText" />
 
-    <!-- ScrollView for cards -->
+    <!-- ScrollView with icons -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -147,42 +148,6 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- Statistical Analysis -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="200dp"
-                    android:layout_margin="8dp"
-                    android:layout_columnWeight="1"
-                    android:layout_rowWeight="1"
-                    app:cardCornerRadius="15dp"
-                    app:cardElevation="8dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:src="@drawable/ic_analysis" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Statistical Analysis"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:gravity="center"
-                            android:textAlignment="center"
-                            android:layout_gravity="center_horizontal"
-                            android:maxLines="2"
-                            android:lineSpacingExtra="2dp" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
                 <!-- Reviews -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
@@ -219,6 +184,7 @@
         </LinearLayout>
     </ScrollView>
 
+    <!-- Banner AdView -->
     <com.google.android.gms.ads.AdView
         android:id="@+id/adView"
         android:layout_width="wrap_content"
@@ -227,4 +193,16 @@
         app:adSize="BANNER"
         app:adUnitId="ca-app-pub-3940256099942544/6300978111"
         android:visibility="gone" />
+
+    <!-- Lottie loading animation -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/mainMenuLoading"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true"
+        app:lottie_fileName="loading.json" />
+
 </RelativeLayout>

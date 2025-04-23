@@ -1,5 +1,6 @@
 package com.example.kotlinbasics;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,26 +9,45 @@ import android.text.Html;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.CheckBox;
-import android.widget.Toast;
+import android.widget.*;
 
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.android.gms.ads.LoadAdError;
+
+
+import java.util.concurrent.Executor;
 
 public class activity_terms_condition extends AppCompatActivity {
 
     private InterstitialAd interstitialAd;
     private String userStatus = "free";
     private Button decline, acknowledge;
+    private CheckBox agree;
+    private Executor executor;
+    private BiometricPrompt biometricPrompt;
+    private BiometricPrompt.PromptInfo promptInfo;
+    private boolean hasSecureDeviceAuth = false;
+    private FirebaseAuth mAuth;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,90 +57,176 @@ public class activity_terms_condition extends AppCompatActivity {
         TextView termsTextView = findViewById(R.id.termsText);
         termsTextView.setText(Html.fromHtml(getString(R.string.terms_conditions_text), Html.FROM_HTML_MODE_LEGACY));
 
-        CheckBox agree = findViewById(R.id.agreeCheckbox);
         acknowledge = findViewById(R.id.acknowledgeButton);
         decline = findViewById(R.id.declineButton);
+        agree = findViewById(R.id.agreeCheckbox);
+        mAuth = FirebaseAuth.getInstance();
 
-        // Initialize Mobile Ads
         MobileAds.initialize(this, initializationStatus -> {});
         loadInterstitialAd();
+        setupBiometricOrPasswordFallback();
 
-        // Load user status from Firestore
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
+        FirebaseFirestore.getInstance().collection("users").document(uid).get().addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 String status = doc.getString("status");
                 if (status != null) userStatus = status;
             }
         });
 
-        // Decline button
         decline.setOnClickListener(view -> {
-            startActivity(new Intent(activity_terms_condition.this, MainMenu.class));
+            startActivity(new Intent(this, MainMenu.class));
             finish();
         });
 
-        // Acknowledge button
         acknowledge.setOnClickListener(v -> {
             if (!agree.isChecked()) {
                 showCustomToast(this, "⚠ Please agree to the Terms & Conditions to proceed");
                 return;
             }
 
-            acknowledge.setEnabled(false);
-            decline.setEnabled(false);
-
             if ("free".equalsIgnoreCase(userStatus)) {
+                acknowledge.setEnabled(false);
+                decline.setEnabled(false);
+
                 if (interstitialAd != null) {
-                    interstitialAd.setFullScreenContentCallback(new com.google.android.gms.ads.FullScreenContentCallback() {
+                    interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                         @Override
                         public void onAdDismissedFullScreenContent() {
-                            goToEnroll();
+                            acknowledge.setEnabled(true);
+                            decline.setEnabled(true);
+                            authenticateSecurely();
+                            loadInterstitialAd(); // ✅ Reload ad after shown
                         }
 
                         @Override
-                        public void onAdFailedToShowFullScreenContent(com.google.android.gms.ads.AdError adError) {
-                            goToEnroll();
+                        public void onAdFailedToShowFullScreenContent(AdError adError) {
+                            acknowledge.setEnabled(true);
+                            decline.setEnabled(true);
+                            authenticateSecurely();
+                            loadInterstitialAd(); // ✅ Retry loading
                         }
                     });
-                    interstitialAd.show(activity_terms_condition.this);
+                    interstitialAd.show(this);
+
                 } else {
-                    // ✅ Re-added toast and fallback wait
                     showCustomToast(this, "⚠ Ad not ready. Proceeding in 5 seconds...");
-                    new Handler().postDelayed(this::goToEnroll, 5000);
+                    new Handler().postDelayed(() -> {
+                        acknowledge.setEnabled(true);
+                        decline.setEnabled(true);
+                        authenticateSecurely();
+                    }, 5000);
                 }
             } else {
-                goToEnroll(); // Premium user
+                authenticateSecurely(); // Premium user skips disable
             }
         });
+    }
+
+    private void setupBiometricOrPasswordFallback() {
+        BiometricManager biometricManager = BiometricManager.from(this);
+        int authStatus = biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        );
+
+        hasSecureDeviceAuth = (authStatus == BiometricManager.BIOMETRIC_SUCCESS);
+
+        executor = ContextCompat.getMainExecutor(this);
+        biometricPrompt = new BiometricPrompt(this, executor, new BiometricPrompt.AuthenticationCallback() {
+            @Override public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                super.onAuthenticationSucceeded(result);
+                goToEnroll();
+            }
+
+            @Override public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                super.onAuthenticationError(errorCode, errString);
+                showCustomToast(activity_terms_condition.this, "❌ Authentication error: " + errString);
+            }
+
+            @Override public void onAuthenticationFailed() {
+                super.onAuthenticationFailed();
+                showCustomToast(activity_terms_condition.this, "❌ Authentication failed");
+            }
+        });
+
+        promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Acknowledge")
+                .setSubtitle("Use device biometrics or password")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build();
+    }
+
+    private void authenticateSecurely() {
+        if (hasSecureDeviceAuth) {
+            // Prompt user to choose authentication method
+            new AlertDialog.Builder(this)
+                    .setTitle("Choose Authentication Method to acknowledge")
+                    .setMessage("Which do you prefer?")
+                    .setPositiveButton("Biometric / Device", (dialog, which) -> biometricPrompt.authenticate(promptInfo))
+                    .setNegativeButton("App Password", (dialog, which) -> promptPasswordFallback())
+                    .setCancelable(false)
+                    .show();
+        } else {
+            // If no biometric available, fallback directly to password
+            promptPasswordFallback();
+        }
+    }
+
+
+    private void promptPasswordFallback() {
+        EditText input = new EditText(this);
+        input.setHint("Enter your password");
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Enter Password")
+                .setMessage("Your device doesn't support biometrics or you prefer password.\nEnter your password to continue.")
+                .setView(input)
+                .setCancelable(false)
+                .setPositiveButton("Acknowledge", (dialog, which) -> {
+                    String password = input.getText().toString().trim();
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    if (user != null && user.getEmail() != null) {
+                        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
+                        user.reauthenticate(credential).addOnSuccessListener(task -> {
+                            goToEnroll();
+                        }).addOnFailureListener(e -> {
+                            showCustomToast(this, "❌ Incorrect password.");
+                            acknowledge.setEnabled(true);
+                            decline.setEnabled(true);
+                        });
+                    }
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    acknowledge.setEnabled(true);
+                    decline.setEnabled(true);
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+    private void goToEnroll() {
+        Intent intent = new Intent(this, enroll_auth.class);
+        startActivity(intent);
+        finish();
     }
 
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, "ca-app-pub-4621437870843076/2525805576", adRequest,
                 new InterstitialAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(InterstitialAd ad) {
+                    @Override public void onAdLoaded(@NonNull InterstitialAd ad) {
                         interstitialAd = ad;
                     }
 
-                    @Override
-                    public void onAdFailedToLoad(LoadAdError adError) {
+                    @Override public void onAdFailedToLoad(@NonNull LoadAdError adError) {
                         interstitialAd = null;
                     }
                 });
     }
 
-    private void goToEnroll() {
-        Intent intent = new Intent(activity_terms_condition.this, enroll_auth.class);
-        startActivity(intent);
-        finish();
-    }
-
     private void showCustomToast(Context context, String message) {
-        LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(R.id.toastText));
+        View layout = LayoutInflater.from(context).inflate(R.layout.custom_toast_layout, findViewById(R.id.toastText));
         TextView text = layout.findViewById(R.id.toastText);
         text.setText(message);
         Toast toast = new Toast(context);
@@ -132,6 +238,6 @@ public class activity_terms_condition extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // ❌ Back button disabled
+        // ❌ Disabled
     }
 }
