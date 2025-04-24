@@ -22,7 +22,7 @@ public class AntiSpoofingClassifier {
     private static final String TAG = "AntiSpoofing";
 
     private static final int INPUT_SIZE = 224;
-    private static final float PROBABILITY_THRESHOLD = 0.8f;
+    private static final float PROBABILITY_THRESHOLD = 0.7f;
     private static final float IMAGE_MEAN = 0.0f;
     private static final float IMAGE_STD = 255.0f;
 
@@ -75,6 +75,33 @@ public class AntiSpoofingClassifier {
             Log.e(TAG, "Error during anti-spoofing classification", e);
             lastProbability = 0f;
             return false;
+        }
+    }
+
+    public float getSpoofProbability(Bitmap bitmap) {
+        if (bitmap == null) {
+            Log.e(TAG, "Null input bitmap");
+            return Float.NaN;
+        }
+
+        try {
+            TensorImage tensorImage = new TensorImage(DataType.FLOAT32);
+            tensorImage.load(bitmap);
+
+            tensorImage = imageProcessor.process(tensorImage);
+
+            TensorBuffer outputBuffer = TensorBuffer.createFixedSize(
+                    new int[]{1, 1}, DataType.FLOAT32);
+
+            interpreter.run(tensorImage.getBuffer(), outputBuffer.getBuffer());
+
+            lastProbability = outputBuffer.getFloatArray()[0];
+
+            return lastProbability;
+        } catch (Exception e) {
+            Log.e(TAG, "Error during anti-spoofing classification", e);
+            lastProbability = 0f;
+            return Float.NaN;
         }
     }
 

@@ -1,6 +1,8 @@
 package com.example.kotlinbasics;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -18,6 +20,7 @@ public class education_activity extends AppCompatActivity {
     private FirebaseFirestore db;
     private TextView summaryText, livenessValue;
     private ImageView phoneVideo;
+    private Button livenessDemoBtn;
 
     private int totalLogs = 0;
     private int spoofed = 0;
@@ -34,6 +37,7 @@ public class education_activity extends AppCompatActivity {
         summaryText = findViewById(R.id.summaryTitle);
         livenessValue = findViewById(R.id.livenessValue);
         phoneVideo = findViewById(R.id.phone_vid);
+        livenessDemoBtn = findViewById(R.id.livenessButton);
 
 
         Glide.with(this)
@@ -41,6 +45,10 @@ public class education_activity extends AppCompatActivity {
                 .load(R.drawable.spoofvideo) // Use the filename without extension
                 .into(phoneVideo);
 
+        livenessDemoBtn.setOnClickListener(view -> {
+            Intent livenessDemoIntent = new Intent(education_activity.this, LivenessDemoAuthActivity.class);
+            startActivity(livenessDemoIntent);
+        });
 
         db = FirebaseFirestore.getInstance();
         fetchLogData();

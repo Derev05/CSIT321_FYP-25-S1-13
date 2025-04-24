@@ -168,6 +168,11 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
 
+        <activity android:name=".LivenessDemoAuthActivity"
+            android:theme="@style/Theme.KotlinBasics"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"/>
+
 
     </application>
 
