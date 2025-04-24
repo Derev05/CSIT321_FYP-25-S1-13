@@ -55,6 +55,8 @@ import com.google.firebase.firestore.SetOptions;
 import java.util.Collections;
 
 
+
+
 public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final String MODEL_NAME = "models/anti_spoofing_model.tflite";
@@ -70,6 +72,9 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
     private AntiSpoofingClassifier antiSpoofingClassifier;
     private boolean isModelLoaded = false;
     private TextView modelStatusText;
+
+    private Toast currentToast;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -102,10 +107,19 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
             if(detectedFace != null) {
                 verifyUser(userId);
             } else {
-                Toast.makeText(this, "No face detected, try again.", Toast.LENGTH_SHORT).show();
+                showInstantToast("No face detected, try again.");
             }
         });
 
+    }
+
+
+    private void showInstantToast(String message) {
+        if (currentToast != null) {
+            currentToast.cancel(); // Cancel previous toast if still showing
+        }
+        currentToast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
+        currentToast.show();
     }
 
     private void requestCameraPermission() {
@@ -290,7 +304,7 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
                 Toast.makeText(this, "Error running face recognition", Toast.LENGTH_SHORT).show();
             }
         } else {
-            runOnUiThread(() -> Toast.makeText(this, "Spoof detected! Please use a real face.", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> showInstantToast("Spoof detected! Please use a real face."));
         }
     }
 

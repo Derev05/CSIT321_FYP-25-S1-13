@@ -65,6 +65,18 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private int consecutiveSpoofCount = 0;
     private static final int SPOOF_THRESHOLD = 3;
 
+    private Toast activeToast;
+
+
+
+    private void showInstantToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel();
+        }
+        activeToast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
+        activeToast.show();
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,9 +101,10 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             if (detectedFace != null && isModelLoaded) {
                 captureAndVerify();
             } else {
-                Toast.makeText(this, "No face or model not ready.", Toast.LENGTH_SHORT).show();
+                showInstantToast("No face or model not ready.");
             }
         });
+
     }
 
     private void captureAndVerify() {
@@ -111,7 +124,8 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         } else {
             Log.w("AntiSpoof", "⚠️ Spoof detected. Confidence: " + probability);
             consecutiveSpoofCount++;
-            runOnUiThread(() -> Toast.makeText(this, "Spoof detected! Attempt " + consecutiveSpoofCount, Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> showInstantToast("Spoof detected! Attempt " + consecutiveSpoofCount));
+
 
             if (consecutiveSpoofCount >= SPOOF_THRESHOLD) {
                 if (javaCameraView != null) javaCameraView.disableView(); // freeze view
@@ -380,6 +394,8 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             javaCameraView.disableView();
         }
     }
+
+
 
     @Override
     protected void onDestroy() {
