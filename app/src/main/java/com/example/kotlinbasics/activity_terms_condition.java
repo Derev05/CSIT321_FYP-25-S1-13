@@ -178,32 +178,46 @@ public class activity_terms_condition extends AppCompatActivity {
         input.setHint("Enter your password");
         input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Enter Password")
-                .setMessage("Your device doesn't support biometrics or you prefer password.\nEnter your password to continue.")
+                .setMessage("Your device doesn't support biometrics or you prefer using app password.\nEnter your password to continue.")
                 .setView(input)
                 .setCancelable(false)
-                .setPositiveButton("Acknowledge", (dialog, which) -> {
-                    String password = input.getText().toString().trim();
-                    FirebaseUser user = mAuth.getCurrentUser();
-                    if (user != null && user.getEmail() != null) {
-                        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
-                        user.reauthenticate(credential).addOnSuccessListener(task -> {
-                            goToEnroll();
-                        }).addOnFailureListener(e -> {
-                            showCustomToast(this, "❌ Incorrect password.");
-                            acknowledge.setEnabled(true);
-                            decline.setEnabled(true);
-                        });
-                    }
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
+                .setPositiveButton("Acknowledge", null)
+                .setNegativeButton("Cancel", (d, which) -> {
                     acknowledge.setEnabled(true);
                     decline.setEnabled(true);
-                    dialog.dismiss();
+                    d.dismiss();
                 })
-                .show();
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            button.setOnClickListener(v -> {
+                String password = input.getText().toString().trim();
+                if (password.isEmpty()) {
+                    input.setError("Password cannot be empty");
+                    return;
+                }
+
+                FirebaseUser user = mAuth.getCurrentUser();
+                if (user != null && user.getEmail() != null) {
+                    AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
+                    user.reauthenticate(credential).addOnSuccessListener(task -> {
+                        dialog.dismiss();
+                        goToEnroll();
+                    }).addOnFailureListener(e -> {
+                        input.setError("❌ Incorrect password");
+                        acknowledge.setEnabled(true);
+                        decline.setEnabled(true);
+                    });
+                }
+            });
+        });
+
+        dialog.show();
     }
+
 
     private void goToEnroll() {
         Intent intent = new Intent(this, enroll_auth.class);
