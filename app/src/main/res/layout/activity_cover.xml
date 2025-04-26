@@ -11,6 +11,7 @@
     <!-- ✅ App Description -->
 
     <ImageView
+        android:id="@+id/bioauth"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_marginStart="105dp"
@@ -48,7 +49,7 @@
         android:id="@+id/reviewSummaryText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:background="@drawable/custom_input"
         android:clickable="true"
         android:focusable="true"
@@ -60,7 +61,6 @@
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.465"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/mytextView" />
 
@@ -68,7 +68,7 @@
         android:id="@+id/browseWeb"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="96dp"
+        android:layout_marginTop="20dp"
         android:background="@drawable/custom_input"
         android:clickable="true"
         android:focusable="true"
@@ -80,28 +80,27 @@
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.462"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mytextView" />
+        app:layout_constraintTop_toBottomOf="@id/reviewSummaryText" />
 
     <Button
         android:id="@+id/startButton"
-        android:layout_width="0dp"
-        android:layout_height="52dp"
-        android:layout_marginStart="48dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:layout_marginEnd="48dp"
-        android:background="@drawable/custom_input"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:backgroundTint="@color/blue"
         android:text="Start"
+        android:gravity="center"
         android:textAlignment="center"
         android:textColor="#FEFEFE"
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/reviewSummaryText"
-        app:layout_constraintVertical_bias="0.629" />
+        app:layout_constraintTop_toBottomOf="@id/browseWeb"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
