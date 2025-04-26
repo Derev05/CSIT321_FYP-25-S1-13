@@ -13,24 +13,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.*;
 
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
+import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 public class FaceConfirmActivity extends AppCompatActivity {
 
@@ -67,25 +57,30 @@ public class FaceConfirmActivity extends AppCompatActivity {
 
         confirmBtn.setOnClickListener(v -> {
             if (fromFalseNegative) {
-                Log.w("FaceConfirm", "⛔ Skipping save — false negative already logged in FaceEnroll.");
+                Log.w("FaceConfirm", "⛔ No additional log saved. False negative already recorded.");
                 runFaceRecognition(faceBitmap);
+                Toast.makeText(this, "✅ Confirmed despite false negative", Toast.LENGTH_SHORT).show();
                 goToNextScreen();
-                return;
+            } else {
+                Log.d("FaceConfirm", "🟢 Saving real face log from FaceConfirm.");
+                saveConfirmedLog();
+                runFaceRecognition(faceBitmap);
+                Toast.makeText(this, "✅ Face Confirmed!", Toast.LENGTH_SHORT).show();
+                goToNextScreen();
             }
-
-            Log.d("FaceConfirm", "🟢 Saving real face log from FaceConfirm.");
-            saveConfirmedLog();
-            runFaceRecognition(faceBitmap);
-            Toast.makeText(this, "✅ Face Confirmed!", Toast.LENGTH_SHORT).show();
-            goToNextScreen();
         });
 
         cancelBtn.setOnClickListener(v -> {
             Toast.makeText(this, "❌ Face Rejected!", Toast.LENGTH_SHORT).show();
-            Intent cancelIntent = new Intent(FaceConfirmActivity.this, FaceEnrollActivity.class);
-            cancelIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(cancelIntent);
-            finish();
+
+            if (fromFalseNegative) {
+                deleteFalseNegativeLog(() -> {
+                    Log.d("FaceConfirm", "🗑️ False negative log removed after rejection.");
+                    goBackToEnroll();
+                });
+            } else {
+                goBackToEnroll();
+            }
         });
     }
 
@@ -111,7 +106,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
         log.put("decision", false); // Real face
         log.put("timestamp", timestamp);
         log.put("readable_time", readableTime);
-        log.put("source", "FaceConfirm"); // 📌 Tag source
+        log.put("source", "FaceConfirm");
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("enrol_logs")
@@ -123,6 +118,39 @@ public class FaceConfirmActivity extends AppCompatActivity {
                         .add(log)
                         .addOnSuccessListener(docRef -> Log.d("FaceConfirm", "✅ Real face log saved"))
                         .addOnFailureListener(e -> Log.e("FaceConfirm", "❌ Failed to save log", e)));
+    }
+
+    private void deleteFalseNegativeLog(Runnable onComplete) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() == null) {
+            onComplete.run();
+            return;
+        }
+
+        String userId = auth.getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("enrol_logs")
+                .document(userId)
+                .collection("attempts")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Boolean isFalseNegative = doc.getBoolean("false_negative");
+                        if (Boolean.TRUE.equals(isFalseNegative)) {
+                            doc.getReference().delete()
+                                    .addOnSuccessListener(v -> Log.d("FaceConfirm", "🗑️ False negative log deleted"))
+                                    .addOnFailureListener(e -> Log.e("FaceConfirm", "❌ Deletion failed", e));
+                        }
+                    }
+                    onComplete.run();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FaceConfirm", "❌ Fetch log failed", e);
+                    onComplete.run();
+                });
     }
 
     private void runFaceRecognition(Bitmap faceBitmap) {
@@ -158,9 +186,16 @@ public class FaceConfirmActivity extends AppCompatActivity {
     }
 
     private void goToNextScreen() {
-        Intent intent = new Intent(FaceConfirmActivity.this, enroll_auth.class);
+        Intent intent = new Intent(this, enroll_auth.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
+        finish();
+    }
+
+    private void goBackToEnroll() {
+        Intent cancelIntent = new Intent(this, FaceEnrollActivity.class);
+        cancelIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(cancelIntent);
         finish();
     }
 }

@@ -1,8 +1,5 @@
 package com.example.kotlinbasics;
 
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,35 +12,25 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.*;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
+import org.opencv.android.*;
 import org.opencv.core.*;
-
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-
-
-import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.DocumentSnapshot;
-
-
 
 public class FaceEnrollActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
@@ -61,18 +48,12 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private AntiSpoofingClassifier antiSpoofingClassifier;
     private boolean isModelLoaded = false;
     private FirebaseFirestore db;
-
     private int consecutiveSpoofCount = 0;
     private static final int SPOOF_THRESHOLD = 3;
-
     private Toast activeToast;
 
-
-
     private void showInstantToast(String message) {
-        if (activeToast != null) {
-            activeToast.cancel();
-        }
+        if (activeToast != null) activeToast.cancel();
         activeToast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
         activeToast.show();
     }
@@ -104,7 +85,6 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                 showInstantToast("No face or model not ready.");
             }
         });
-
     }
 
     private void captureAndVerify() {
@@ -120,83 +100,51 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         if (isReal) {
             Log.i("AntiSpoof", "✅ Real face. Confidence: " + probability);
             consecutiveSpoofCount = 0;
-            proceedWithEnrollment(faceBitmap, false); // real face, no log needed
+            proceedWithEnrollment(faceBitmap, false);
         } else {
             Log.w("AntiSpoof", "⚠️ Spoof detected. Confidence: " + probability);
             consecutiveSpoofCount++;
             runOnUiThread(() -> showInstantToast("Spoof detected! Attempt " + consecutiveSpoofCount));
 
-
             if (consecutiveSpoofCount >= SPOOF_THRESHOLD) {
-                if (javaCameraView != null) javaCameraView.disableView(); // freeze view
+                if (javaCameraView != null) javaCameraView.disableView();
 
                 runOnUiThread(() -> new androidx.appcompat.app.AlertDialog.Builder(this)
                         .setTitle("Are you wearing specs?")
                         .setMessage("You were flagged 3 times. If you're real, tap YES to continue.")
                         .setCancelable(false)
                         .setPositiveButton("YES", (dialog, which) -> {
-                            FirebaseAuth auth = FirebaseAuth.getInstance();
-                            String userId = auth.getCurrentUser().getUid();
-
-                            db.collection("enrol_logs")
-                                    .document(userId)
-                                    .collection("attempts")
-                                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                                    .limit(3)
-                                    .get()
-                                    .addOnSuccessListener(snapshot -> {
-                                        int deleted = 0;
-                                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                                            Boolean decision = doc.getBoolean("decision");
-                                            Boolean isFalseNegative = doc.getBoolean("false_negative");
-
-                                            if (Boolean.TRUE.equals(decision) && !Boolean.TRUE.equals(isFalseNegative) && deleted < 2) {
-                                                doc.getReference().delete();
-                                                deleted++;
-                                            }
-                                        }
-
-                                        // ✅ Save the 3rd spoof attempt as a false negative
-                                        saveLog(probability, true, true);
-                                        proceedWithEnrollment(faceBitmap, true);
-                                        consecutiveSpoofCount = 0;
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e("FaceEnroll", "❌ Failed to delete previous spoof logs", e);
-                                        saveLog(probability, true, true); // still log false negative
-                                        proceedWithEnrollment(faceBitmap, true);
-                                        consecutiveSpoofCount = 0;
-                                    });
+                            // Proceed and only save 3rd log as false_negative
+                            proceedWithEnrollment(faceBitmap, true); // ❗ Don't log here — only FaceConfirm will
+                            consecutiveSpoofCount = 0;
                         })
                         .setNegativeButton("NO", (dialog, which) -> {
                             enableCamera(); // let user retry
                             consecutiveSpoofCount = 0;
                         })
                         .show());
-
             } else {
-                // ✅ Save 1st and 2nd spoof logs normally
-                saveLog(probability, true, false);
+                saveLog(probability, true, false); // Log 1st and 2nd normally
             }
         }
     }
 
-
-
     private void proceedWithEnrollment(Bitmap faceBitmap, boolean fromFalseNegative) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        faceBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-        byte[] byteArray = byteArrayOutputStream.toByteArray();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        faceBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
 
-        Intent intent = new Intent(FaceEnrollActivity.this, FaceConfirmActivity.class);
+        Intent intent = new Intent(this, FaceConfirmActivity.class);
         intent.putExtra("face", new SerializableRect(detectedFace));
         intent.putExtra("image", byteArray);
-        intent.putExtra("fromFalseNegative", fromFalseNegative); // ✅ flag to prevent duplicate
+        intent.putExtra("fromFalseNegative", fromFalseNegative); // Tell confirm activity
         startActivity(intent);
     }
 
     private void saveLog(float probability, boolean isSpoof, boolean isFalseNegative) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() == null) return;
+
         String userId = auth.getCurrentUser().getUid();
         String email = auth.getCurrentUser().getEmail();
         long timestamp = System.currentTimeMillis();
@@ -223,19 +171,8 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                         .document(userId)
                         .collection("attempts")
                         .add(log)
-                        .addOnSuccessListener(docRef -> Log.d("FaceEnroll", "✅ Spoof/FalseNegative log saved"))
+                        .addOnSuccessListener(docRef -> Log.d("FaceEnroll", "✅ Log saved"))
                         .addOnFailureListener(e -> Log.e("FaceEnroll", "❌ Failed to save log", e)));
-    }
-
-    private void proceedWithEnrollment(Bitmap faceBitmap) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        faceBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-        byte[] byteArray = byteArrayOutputStream.toByteArray();
-
-        Intent intent = new Intent(FaceEnrollActivity.this, FaceConfirmActivity.class);
-        intent.putExtra("face", new SerializableRect(detectedFace));
-        intent.putExtra("image", byteArray);
-        startActivity(intent);
     }
 
     private void requestCameraPermission() {
@@ -267,14 +204,10 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                 os.write(buffer, 0, bytesRead);
             }
 
-            os.close();
-            is.close();
+            is.close(); os.close();
 
             faceDetector = new CascadeClassifier(cascadeFile.getAbsolutePath());
-            if (faceDetector.empty()) {
-                Log.e("Cascade", "Failed to load face detector.");
-            }
-
+            if (faceDetector.empty()) Log.e("Cascade", "Failed to load cascade.");
         } catch (IOException e) {
             Log.e("Cascade", "Error loading cascade", e);
         }
@@ -286,15 +219,15 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         grayFrame = new Mat();
         absoluteFaceSize = (int) (height * 0.3);
 
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        javaCameraView.setMaxFrameSize(displayMetrics.widthPixels, displayMetrics.heightPixels);
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        javaCameraView.setMaxFrameSize(metrics.widthPixels, metrics.heightPixels);
     }
 
     @Override
     public void onCameraViewStopped() {
-        mRgba.release();
-        grayFrame.release();
+        if (mRgba != null) mRgba.release();
+        if (grayFrame != null) grayFrame.release();
     }
 
     @Override
@@ -302,14 +235,12 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         mRgba = inputFrame.rgba();
         grayFrame = new Mat();
         Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
-
         Core.flip(mRgba, mRgba, +1);
         Core.flip(grayFrame, grayFrame, +1);
 
         MatOfRect faces = new MatOfRect();
         if (faceDetector != null) {
-            faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
-                    new Size(absoluteFaceSize, absoluteFaceSize), new Size());
+            faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2, new Size(absoluteFaceSize, absoluteFaceSize), new Size());
         }
 
         Rect[] facesArray = faces.toArray();
@@ -322,8 +253,6 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
 
         return mRgba;
     }
-
-    // === Model loading ===
 
     private void checkModelStatus() {
         if (isModelDownloaded()) {
@@ -340,7 +269,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             isModelLoaded = true;
             updateModelStatus("Security active");
         } catch (IOException e) {
-            updateModelStatus("Security initialization failed");
+            updateModelStatus("Security init failed");
         }
     }
 
@@ -375,8 +304,8 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                 });
     }
 
-    private void updateModelStatus(String message) {
-        runOnUiThread(() -> modelStatusText.setText(message));
+    private void updateModelStatus(String msg) {
+        runOnUiThread(() -> modelStatusText.setText(msg));
     }
 
     @Override
@@ -390,21 +319,13 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     @Override
     protected void onPause() {
         super.onPause();
-        if (javaCameraView != null) {
-            javaCameraView.disableView();
-        }
+        if (javaCameraView != null) javaCameraView.disableView();
     }
-
-
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (javaCameraView != null) {
-            javaCameraView.disableView();
-        }
-        if (antiSpoofingClassifier != null) {
-            antiSpoofingClassifier.close();
-        }
+        if (javaCameraView != null) javaCameraView.disableView();
+        if (antiSpoofingClassifier != null) antiSpoofingClassifier.close();
     }
 }
