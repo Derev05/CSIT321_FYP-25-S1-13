@@ -3,9 +3,7 @@ package com.example.kotlinbasics;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.SystemClock;
+import android.os.*;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -26,8 +24,9 @@ public class OtpVerificationActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "LoginPrefs";
     private static final String KEY_LAST_OTP_VERIFIED = "last_otp_verified";
+    private static final String KEY_PENDING_OTP = "pending_otp"; // ✅ added
     private static final long OTP_EXPIRATION_TIME = 60 * 60 * 1000; // 1 hour
-    private static final long RESEND_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+    private static final long RESEND_COOLDOWN = 60 * 1000; // 1 min cooldown
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -50,12 +49,11 @@ public class OtpVerificationActivity extends AppCompatActivity {
         showToast("Please check your inbox or spam! OTP sent to " + userEmail);
         startResendCooldown();
 
-        // ✅ Auto-submit OTP when 6 digits are entered
+        // Auto-verify when 6 digits typed
         otpInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override
-            public void afterTextChanged(Editable s) {
+            @Override public void afterTextChanged(Editable s) {
                 String enteredOtp = s.toString().trim();
                 if (enteredOtp.length() == 6) {
                     verifyOtp(enteredOtp);
@@ -63,13 +61,11 @@ public class OtpVerificationActivity extends AppCompatActivity {
             }
         });
 
-        // ✅ Manual Verify Button
         verifyOtpButton.setOnClickListener(v -> {
             String enteredOtp = otpInput.getText().toString().trim();
             verifyOtp(enteredOtp);
         });
 
-        // ✅ Resend OTP
         resendOtpButton.setOnClickListener(v -> {
             resendOtpButton.setEnabled(false);
             sendOtp(userEmail);
@@ -79,7 +75,11 @@ public class OtpVerificationActivity extends AppCompatActivity {
     private void verifyOtp(String enteredOtp) {
         if (enteredOtp.equals(generatedOtp)) {
             long now = System.currentTimeMillis();
-            sharedPreferences.edit().putLong(KEY_LAST_OTP_VERIFIED, now).apply();
+            sharedPreferences.edit()
+                    .putLong(KEY_LAST_OTP_VERIFIED, now)
+                    .remove(KEY_PENDING_OTP) // ✅ clear pending
+                    .apply();
+
             startActivity(new Intent(this, MainMenu.class)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
             finish();
@@ -92,6 +92,10 @@ public class OtpVerificationActivity extends AppCompatActivity {
         loadingSpinner.setVisibility(View.VISIBLE);
         generatedOtp = GmailSender.generateOTP();
         otpGeneratedTime = SystemClock.elapsedRealtime();
+
+        sharedPreferences.edit()
+                .putString(KEY_PENDING_OTP, generatedOtp) // ✅ update pending OTP
+                .apply();
 
         GmailSender.sendEmailAsync(email, "Your OTP Code", "Your OTP is: " + generatedOtp, success -> {
             runOnUiThread(() -> {

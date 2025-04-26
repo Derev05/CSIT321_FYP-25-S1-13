@@ -42,6 +42,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_LAST_OTP_VERIFIED = "last_otp_verified";
     private static final String KEY_LAST_UID = "last_user_uid";
+    private static final String KEY_PENDING_OTP = "pending_otp"; // ✅ Added
     private static final long OTP_VALID_DURATION = 60 * 60 * 1000; // 1 hour
 
     private boolean loginInProgress = false;
@@ -121,7 +122,6 @@ public class LoginActivity extends AppCompatActivity {
                         boolean isNewUser = lastUid == null || !lastUid.equals(currentUid);
                         boolean otpExpired = (System.currentTimeMillis() - lastOtp) >= OTP_VALID_DURATION;
 
-                        // Store credentials
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         if (rememberMeCheckBox.isChecked()) {
                             editor.putString(KEY_EMAIL, email);
@@ -133,9 +133,17 @@ public class LoginActivity extends AppCompatActivity {
                         editor.putString(KEY_LAST_UID, currentUid);
                         editor.apply();
 
-                        // Force OTP if new user or OTP expired, no matter checkbox
                         if (isNewUser || otpExpired) {
-                            generateAndSendOTP(email);
+                            String pendingOtp = sharedPreferences.getString(KEY_PENDING_OTP, null);
+                            if (pendingOtp != null) {
+                                Intent intent = new Intent(this, OtpVerificationActivity.class);
+                                intent.putExtra("email", email);
+                                intent.putExtra("otp", pendingOtp);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                generateAndSendOTP(email);
+                            }
                         } else {
                             playMascot("success.json");
                             proceedToDashboard();
@@ -162,13 +170,18 @@ public class LoginActivity extends AppCompatActivity {
 
     private void generateAndSendOTP(String email) {
         String otp = String.format("%06d", new Random().nextInt(999999));
-        sharedPreferences.edit().putLong(KEY_LAST_OTP_VERIFIED, 0).apply();
+
+        sharedPreferences.edit()
+                .putString(KEY_PENDING_OTP, otp)
+                .putLong(KEY_LAST_OTP_VERIFIED, 0)
+                .apply();
 
         emailExecutor.execute(() -> {
             String subject = "Your OTP Code For BioAuth";
             String body = "Your OTP is: " + otp + "\n\nUse this code to verify your login.";
             GmailSender.sendEmailAsync(email, subject, body, success ->
-                    Log.d(TAG, success ? "✅ OTP email sent" : "❌ OTP email failed"));
+                    Log.d(TAG, success ? "✅ OTP email sent" : "❌ OTP email failed")
+            );
         });
 
         Intent intent = new Intent(this, OtpVerificationActivity.class);
