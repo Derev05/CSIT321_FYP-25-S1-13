@@ -157,6 +157,9 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
         mRgba = inputFrame.rgba();
         Imgproc.cvtColor(mRgba, grayFrame, Imgproc.COLOR_RGBA2GRAY);
 
+        Core.flip(mRgba, mRgba,+1);
+        Core.flip(grayFrame, grayFrame,+1);
+
         MatOfRect faces = new MatOfRect();
         if (faceDetector != null) {
             faceDetector.detectMultiScale(grayFrame, faces, 1.1, 2, 2,
