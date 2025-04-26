@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name1">Biometric Educational</string>
+    <string name="app_name1">BioAuth</string>
     <string name="biometric">Biometric Data</string>
 
     <string name="otp_sent_message">We have sent a 6-digit OTP to your email</string>
