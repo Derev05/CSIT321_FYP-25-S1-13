@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -7,15 +8,36 @@
     android:background="@android:color/white"
     android:layout_marginBottom="10dp">
 
-    <TextView
-        android:id="@+id/emailTextView"
-        android:layout_width="wrap_content"
+    <!-- Profile Photo and Email Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="User Email"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
+        <!-- Profile Photo -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/default_avatar"
+            android:layout_marginEnd="8dp"
+            app:civ_border_width="2dp"
+            app:civ_border_color="#FFFFFF"/>
+
+        <!-- Censored Email Text -->
+        <TextView
+            android:id="@+id/emailTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Email"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"/>
+    </LinearLayout>
+
+    <!-- Rating Bar -->
     <RatingBar
         android:id="@+id/ratingBar"
         android:layout_width="wrap_content"
@@ -23,8 +45,10 @@
         android:numStars="5"
         android:stepSize="1.0"
         android:rating="0"
-        android:isIndicator="true"/>
+        android:isIndicator="true"
+        android:layout_marginBottom="6dp"/>
 
+    <!-- Review Text -->
     <TextView
         android:id="@+id/reviewTextView"
         android:layout_width="wrap_content"
@@ -34,6 +58,7 @@
         android:textColor="@android:color/black"
         android:paddingTop="5dp"/>
 
+    <!-- Recommend Text -->
     <TextView
         android:id="@+id/recommendTextView"
         android:layout_width="wrap_content"
@@ -43,6 +68,7 @@
         android:textColor="@android:color/black"
         android:paddingTop="5dp"/>
 
+    <!-- Date Text -->
     <TextView
         android:id="@+id/dateTextView"
         android:layout_width="wrap_content"

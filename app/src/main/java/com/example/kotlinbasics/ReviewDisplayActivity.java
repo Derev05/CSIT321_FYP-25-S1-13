@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import com.bumptech.glide.Glide;
 
 public class ReviewDisplayActivity extends AppCompatActivity {
 
@@ -63,7 +64,9 @@ public class ReviewDisplayActivity extends AppCompatActivity {
 
     private void fetchReviews() {
         progressBar.setVisibility(View.VISIBLE);
-        db.collection("reviews").get()
+        db.collection("reviews")
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING) // <== sort by newest
+                .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
                     if (queryDocumentSnapshots.isEmpty()) {
@@ -79,9 +82,6 @@ public class ReviewDisplayActivity extends AppCompatActivity {
                         String recommend = document.getString("recommend");
                         Long timestamp = document.getLong("timestamp");
                         Long ratingLong = document.getLong("rating");
-
-                        // Debug Logs
-                        Log.d(TAG, "✅ Review Loaded: " + email + " | " + reviewText);
 
                         if (timestamp == null || ratingLong == null) {
                             Log.e(TAG, "❌ Missing data in document: " + document.getId());
@@ -108,6 +108,7 @@ public class ReviewDisplayActivity extends AppCompatActivity {
                     Log.e(TAG, "❌ Error fetching reviews: ", e);
                 });
     }
+
 
 }
 
@@ -153,11 +154,32 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ReviewModel review = reviewList.get(position);
-        holder.emailTextView.setText(review.getEmail());
+
+        // Censor the email (example: sy****wan@gmail.com)
+        holder.emailTextView.setText(censorEmail(review.getEmail()));
+
         holder.ratingBar.setRating(review.getRating());
         holder.reviewTextView.setText(review.getReviewText());
         holder.dateTextView.setText(review.getDate());
         holder.recommendTextView.setText("Recommend: " + review.getRecommend());
+
+        // Load default profile photo
+        Glide.with(holder.itemView.getContext())
+                .load(R.drawable.default_avatar) // for now, load default_avatar from drawable
+                .into(holder.profileImageView);
+    }
+
+    // Censoring email helper
+    private String censorEmail(String email) {
+        int atIndex = email.indexOf("@");
+        if (atIndex > 2) {
+            String firstTwo = email.substring(0, 2);
+            String lastTwoBeforeAt = email.substring(atIndex - 2, atIndex);
+            String domain = email.substring(atIndex);
+            return firstTwo + "****" + lastTwoBeforeAt + domain;
+        } else {
+            return email; // if email too short, just return normal
+        }
     }
 
     @Override
@@ -168,6 +190,7 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView emailTextView, reviewTextView, dateTextView, recommendTextView;
         RatingBar ratingBar;
+        de.hdodenhof.circleimageview.CircleImageView profileImageView;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -176,6 +199,7 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
             dateTextView = itemView.findViewById(R.id.dateTextView);
             recommendTextView = itemView.findViewById(R.id.recommendTextView);
             ratingBar = itemView.findViewById(R.id.ratingBar);
+            profileImageView = itemView.findViewById(R.id.profileImageView);
         }
     }
 }

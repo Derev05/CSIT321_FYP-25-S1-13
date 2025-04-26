@@ -9,28 +9,47 @@
     <View
         android:id="@+id/top_view"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="240dp"
         android:background="@drawable/bg_view" />
 
-    <!-- Signed in as Email -->
-    <TextView
-        android:id="@+id/userEmailText"
+    <!-- Email and Profile Photo Row -->
+    <LinearLayout
+        android:id="@+id/emailProfileRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Signed in as: syzwanozzie@gmail.com"
-        android:textSize="14sp"
-        android:textColor="@android:color/white"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="48dp"
         android:layout_alignParentTop="true"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="10sp"
-        android:autoSizeMaxTextSize="14sp"
-        android:autoSizeStepGranularity="1sp" />
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Profile Photo -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/topProfileImage"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:src="@drawable/default_avatar"
+            android:layout_marginEnd="12dp"
+            app:civ_border_width="3dp"
+            app:civ_border_color="#FFFFFF" />
+
+        <!-- Email Text -->
+        <TextView
+            android:id="@+id/userEmailText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="email@example.com"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp" />
+    </LinearLayout>
 
     <!-- Menu Button (3-dot icon) -->
     <ImageButton
@@ -39,7 +58,7 @@
         android:layout_height="wrap_content"
         android:src="@drawable/ic_menu"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:layout_alignTop="@id/userEmailText"
+        android:layout_alignTop="@id/emailProfileRow"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="12dp"
         android:contentDescription="Menu Icon" />
@@ -55,9 +74,9 @@
         android:textColor="@android:color/white"
         android:layout_marginTop="40dp"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/userEmailText" />
+        android:layout_below="@id/emailProfileRow" />
 
-    <!-- ScrollView with icons -->
+    <!-- ScrollView with Grid Cards -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -79,7 +98,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_gravity="center">
 
-                <!-- Biometric -->
+                <!-- Biometric Card -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
                     android:layout_height="200dp"
@@ -111,7 +130,7 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- Mitigation Strategy -->
+                <!-- Mitigation Strategy Card -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
                     android:layout_height="200dp"
@@ -148,7 +167,7 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- Reviews -->
+                <!-- Reviews Card -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
                     android:layout_height="200dp"
@@ -180,7 +199,40 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
+                <!-- Profile Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="200dp"
+                    android:layout_margin="8dp"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    app:cardCornerRadius="15dp"
+                    app:cardElevation="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/profileIcon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@drawable/ic_profile" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Profile"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
             </GridLayout>
+
         </LinearLayout>
     </ScrollView>
 
@@ -194,7 +246,7 @@
         app:adUnitId="ca-app-pub-3940256099942544/6300978111"
         android:visibility="gone" />
 
-    <!-- Lottie loading animation -->
+    <!-- Lottie Loading Animation -->
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/mainMenuLoading"
         android:layout_width="250dp"

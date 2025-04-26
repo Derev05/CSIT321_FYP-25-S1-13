@@ -66,6 +66,10 @@ dependencies {
 
     implementation("com.airbnb.android:lottie:6.0.0") // ✅ Lottie animation support
 
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
+
+
     // ✅ Glide in Kotlin DSL
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")

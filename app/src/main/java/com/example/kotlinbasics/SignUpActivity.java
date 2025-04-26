@@ -2,6 +2,7 @@ package com.example.kotlinbasics;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
@@ -16,6 +17,8 @@ import android.widget.*;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -24,6 +27,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+    private FirebaseStorage storage;
     private EditText emailInput, passwordInput, confirmPasswordInput;
     private Button signUpButton, cancelButton;
     private ImageButton togglePassword, toggleConfirmPassword;
@@ -36,6 +40,7 @@ public class SignUpActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance(); // ✅ Add storage
 
         emailInput = findViewById(R.id.emailInput);
         passwordInput = findViewById(R.id.passwordInput);
@@ -48,18 +53,10 @@ public class SignUpActivity extends AppCompatActivity {
         togglePassword.setOnClickListener(v -> toggleVisibility(passwordInput, togglePassword));
         toggleConfirmPassword.setOnClickListener(v -> toggleVisibility(confirmPasswordInput, toggleConfirmPassword));
 
-        // 👉 Scroll text to front on focus loss
-        emailInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) emailInput.setSelection(0);
-        });
-        passwordInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) passwordInput.setSelection(0);
-        });
-        confirmPasswordInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) confirmPasswordInput.setSelection(0);
-        });
+        emailInput.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) emailInput.setSelection(0); });
+        passwordInput.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) passwordInput.setSelection(0); });
+        confirmPasswordInput.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) confirmPasswordInput.setSelection(0); });
 
-        // 👉 Tap outside to hide keyboard and scroll all fields to front
         findViewById(android.R.id.content).setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 View currentFocus = getCurrentFocus();
@@ -81,31 +78,11 @@ public class SignUpActivity extends AppCompatActivity {
             String password = passwordInput.getText().toString().trim();
             String confirmPass = confirmPasswordInput.getText().toString().trim();
 
-            if (email.isEmpty()) {
-                showCustomToast("Email cannot be empty");
-                emailInput.requestFocus();
-                return;
-            }
-            if (password.isEmpty()) {
-                showCustomToast("Password cannot be empty");
-                passwordInput.requestFocus();
-                return;
-            }
-            if (confirmPass.isEmpty()) {
-                showCustomToast("Please confirm your password");
-                confirmPasswordInput.requestFocus();
-                return;
-            }
-            if (!password.equals(confirmPass)) {
-                showCustomToast("Passwords do not match");
-                confirmPasswordInput.requestFocus();
-                return;
-            }
-            if (!isPasswordStrong(password)) {
-                showCustomToast("Password too weak! Use 8+ characters with upper/lowercase, numbers, and symbols.");
-                passwordInput.requestFocus();
-                return;
-            }
+            if (email.isEmpty()) { showCustomToast("Email cannot be empty"); emailInput.requestFocus(); return; }
+            if (password.isEmpty()) { showCustomToast("Password cannot be empty"); passwordInput.requestFocus(); return; }
+            if (confirmPass.isEmpty()) { showCustomToast("Please confirm your password"); confirmPasswordInput.requestFocus(); return; }
+            if (!password.equals(confirmPass)) { showCustomToast("Passwords do not match"); confirmPasswordInput.requestFocus(); return; }
+            if (!isPasswordStrong(password)) { showCustomToast("Password too weak! Use 8+ characters with upper/lowercase, numbers, and symbols."); passwordInput.requestFocus(); return; }
 
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(task -> {
@@ -129,10 +106,12 @@ public class SignUpActivity extends AppCompatActivity {
                                 db.collection("users")
                                         .document(userId)
                                         .set(userData)
-                                        .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ User data saved in Firestore"))
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d(TAG, "✅ User data saved in Firestore");
+                                            uploadDefaultProfilePhoto(userId); // ✅ Upload default photo
+                                        })
                                         .addOnFailureListener(e -> Log.e(TAG, "❌ Firestore error: " + e.getMessage()));
                             }
-
                         } else {
                             showCustomToast("Registration Failed: " + task.getException().getMessage());
                         }
@@ -143,6 +122,15 @@ public class SignUpActivity extends AppCompatActivity {
             startActivity(new Intent(SignUpActivity.this, LoginActivity.class));
             finish();
         });
+    }
+
+    private void uploadDefaultProfilePhoto(String userId) {
+        Uri defaultPhotoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.drawable.default_avatar); // ✅ Default image
+        StorageReference storageRef = storage.getReference().child("profilePhotos/" + userId + ".jpg");
+
+        storageRef.putFile(defaultPhotoUri)
+                .addOnSuccessListener(taskSnapshot -> Log.d(TAG, "✅ Default profile photo uploaded"))
+                .addOnFailureListener(e -> Log.e(TAG, "❌ Failed to upload default profile photo: " + e.getMessage()));
     }
 
     private boolean isPasswordStrong(String password) {

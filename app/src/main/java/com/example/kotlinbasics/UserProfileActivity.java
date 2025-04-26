@@ -1,31 +1,42 @@
 package com.example.kotlinbasics;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 public class UserProfileActivity extends AppCompatActivity {
 
     private TextView userEmailText, userStatusText;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+    private FirebaseStorage storage;
     private Button changePasswordButton, deleteAccountButton, upgradeButton;
+    private ImageButton backButton;
+    private de.hdodenhof.circleimageview.CircleImageView profileImageView;
+
+    private ActivityResultLauncher<Intent> pickImageLauncher;
+    private Uri selectedImageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +48,12 @@ public class UserProfileActivity extends AppCompatActivity {
         changePasswordButton = findViewById(R.id.changePasswordButton);
         deleteAccountButton = findViewById(R.id.deleteAccountButton);
         upgradeButton = findViewById(R.id.upgradeButton);
-        ImageButton backButton = findViewById(R.id.backButton);
+        backButton = findViewById(R.id.backButton);
+        profileImageView = findViewById(R.id.profileImageView);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(UserProfileActivity.this, MainMenu.class);
@@ -51,6 +64,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
         fetchUserStatus();
         setupButtonListeners();
+        setupProfileImageClick();
     }
 
     @Override
@@ -101,6 +115,7 @@ public class UserProfileActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             userEmailText.setText(user.getEmail());
+            loadProfilePhoto(user.getUid());
 
             db.collection("users").document(user.getUid()).get()
                     .addOnSuccessListener(documentSnapshot -> {
@@ -129,6 +144,55 @@ public class UserProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void setupProfileImageClick() {
+        pickImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        selectedImageUri = result.getData().getData();
+                        uploadProfilePhoto(selectedImageUri);
+                    }
+                }
+        );
+
+        profileImageView.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            pickImageLauncher.launch(intent);
+        });
+    }
+
+    private void uploadProfilePhoto(Uri imageUri) {
+        if (imageUri == null) return;
+
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+
+        StorageReference profileRef = storage.getReference().child("profilePhotos/" + user.getUid() + ".jpg");
+
+        profileRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    showToast("✅ Profile photo updated!");
+                    loadProfilePhoto(user.getUid()); // Refresh
+                })
+                .addOnFailureListener(e -> showToast("❌ Failed to upload photo."));
+    }
+
+    private void loadProfilePhoto(String userId) {
+        StorageReference profileRef = storage.getReference().child("profilePhotos/" + userId + ".jpg");
+
+        profileRef.getDownloadUrl()
+                .addOnSuccessListener(uri -> {
+                    Glide.with(this)
+                            .load(uri)
+                            .placeholder(R.drawable.default_avatar)
+                            .into(profileImageView);
+                })
+                .addOnFailureListener(e -> {
+                    profileImageView.setImageResource(R.drawable.default_avatar);
+                });
+    }
+
     private void showCancelSubscriptionDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Cancel Subscription")
@@ -151,7 +215,6 @@ public class UserProfileActivity extends AppCompatActivity {
         }
     }
 
-    // ✅ Delete user + reviews by email
     private void deleteUserAccount() {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
@@ -159,7 +222,7 @@ public class UserProfileActivity extends AppCompatActivity {
         String userId = user.getUid();
         String userEmail = user.getEmail();
 
-        // Step 1: Delete all reviews where email == userEmail
+        // Step 1: Delete all reviews by this user
         db.collection("reviews")
                 .whereEqualTo("email", userEmail)
                 .get()
@@ -168,23 +231,45 @@ public class UserProfileActivity extends AppCompatActivity {
                         db.collection("reviews").document(doc.getId()).delete();
                     }
 
-                    // Step 2: Delete user document from 'users' collection
-                    db.collection("users").document(userId).delete()
+                    // Step 2: Delete user's profile photo from Firebase Storage
+                    StorageReference profileRef = storage.getReference()
+                            .child("profilePhotos/" + userId + ".jpg");
+                    profileRef.delete()
                             .addOnSuccessListener(unused -> {
-                                // Step 3: Delete user account
-                                user.delete().addOnCompleteListener(task -> {
-                                    if (task.isSuccessful()) {
-                                        showToast("Account and data deleted successfully.");
-                                        signOutAndRedirect();
-                                    } else {
-                                        showToast("Failed to delete account.");
-                                    }
-                                });
+                                // Step 3: Delete user document from Firestore
+                                db.collection("users").document(userId).delete()
+                                        .addOnSuccessListener(unused1 -> {
+                                            // Step 4: Delete user authentication account
+                                            user.delete().addOnCompleteListener(task -> {
+                                                if (task.isSuccessful()) {
+                                                    showToast("Account, photo, and data deleted successfully.");
+                                                    signOutAndRedirect();
+                                                } else {
+                                                    showToast("Failed to delete account.");
+                                                }
+                                            });
+                                        })
+                                        .addOnFailureListener(e -> showToast("Failed to delete user document."));
                             })
-                            .addOnFailureListener(e -> showToast("Failed to delete user document."));
+                            .addOnFailureListener(e -> {
+                                // Even if profile photo not found (no upload), continue
+                                db.collection("users").document(userId).delete()
+                                        .addOnSuccessListener(unused1 -> {
+                                            user.delete().addOnCompleteListener(task -> {
+                                                if (task.isSuccessful()) {
+                                                    showToast("Account deleted, no profile photo found.");
+                                                    signOutAndRedirect();
+                                                } else {
+                                                    showToast("Failed to delete account.");
+                                                }
+                                            });
+                                        })
+                                        .addOnFailureListener(e2 -> showToast("Failed to delete user document."));
+                            });
                 })
                 .addOnFailureListener(e -> showToast("Failed to delete reviews."));
     }
+
 
     private void signOutAndRedirect() {
         mAuth.signOut();
@@ -196,8 +281,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void showToast(String message) {
         LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast_layout,
-                findViewById(android.R.id.content), false);
+        View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
         TextView text = layout.findViewById(R.id.toastText);
         text.setText(message);
         Toast toast = new Toast(getApplicationContext());
