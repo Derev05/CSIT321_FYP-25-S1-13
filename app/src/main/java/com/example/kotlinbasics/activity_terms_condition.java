@@ -174,14 +174,36 @@ public class activity_terms_condition extends AppCompatActivity {
 
 
     private void promptPasswordFallback() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(50, 20, 50, 20);
+
         EditText input = new EditText(this);
         input.setHint("Enter your password");
         input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        input.setLayoutParams(inputParams);
+
+        CheckBox showPassword = new CheckBox(this);
+        showPassword.setText("Show");
+        showPassword.setPadding(20, 0, 0, 0);
+
+        layout.addView(input);
+        layout.addView(showPassword);
+
+        showPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            } else {
+                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            }
+            input.setSelection(input.getText().length()); // move cursor to the end
+        });
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Enter Password")
                 .setMessage("Your device doesn't support biometrics or you prefer using app password.\nEnter your password to continue.")
-                .setView(input)
+                .setView(layout)
                 .setCancelable(false)
                 .setPositiveButton("Acknowledge", null)
                 .setNegativeButton("Cancel", (d, which) -> {
@@ -217,6 +239,7 @@ public class activity_terms_condition extends AppCompatActivity {
 
         dialog.show();
     }
+
 
 
     private void goToEnroll() {
