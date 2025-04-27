@@ -54,19 +54,7 @@ public class MainMenu extends AppCompatActivity {
         if (user != null) {
             userEmailText.setText(user.getEmail());
 
-            // Load Profile Photo from Firebase Storage
-            FirebaseStorage.getInstance().getReference()
-                    .child("profilePhotos/" + user.getUid() + ".jpg")
-                    .getDownloadUrl()
-                    .addOnSuccessListener(uri -> {
-                        Glide.with(this)
-                                .load(uri)
-                                .placeholder(R.drawable.default_avatar)
-                                .into(topProfileImage);
-                    })
-                    .addOnFailureListener(e -> {
-                        topProfileImage.setImageResource(R.drawable.default_avatar);
-                    });
+            refreshProfilePhoto(); // ✅ Initial load
 
             // Click Email or Profile Photo to go UserProfileActivity
             View.OnClickListener goToProfile = v -> {
@@ -113,6 +101,43 @@ public class MainMenu extends AppCompatActivity {
 
         // Menu (3 dots)
         findViewById(R.id.menuButton).setOnClickListener(this::showPopupMenu);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshProfilePhoto(); // ✅ Refresh latest photo when coming back
+    }
+
+    private void refreshProfilePhoto() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            mainMenuLoading.setVisibility(View.VISIBLE);
+            mainMenuLoading.setAnimation("loading.json");
+            mainMenuLoading.playAnimation();
+            topProfileImage.setVisibility(View.INVISIBLE); // hide profile during loading
+
+            FirebaseStorage.getInstance().getReference()
+                    .child("profilePhotos/" + user.getUid() + ".jpg")
+                    .getDownloadUrl()
+                    .addOnSuccessListener(uri -> {
+                        Glide.with(MainMenu.this)
+                                .load(uri)
+                                .placeholder(R.drawable.default_avatar)
+                                .into(topProfileImage);
+
+                        mainMenuLoading.cancelAnimation();
+                        mainMenuLoading.setVisibility(View.GONE);
+                        topProfileImage.setVisibility(View.VISIBLE);
+                    })
+                    .addOnFailureListener(e -> {
+                        topProfileImage.setImageResource(R.drawable.default_avatar);
+
+                        mainMenuLoading.cancelAnimation();
+                        mainMenuLoading.setVisibility(View.GONE);
+                        topProfileImage.setVisibility(View.VISIBLE);
+                    });
+        }
     }
 
     private void checkUserStatusAndProceed(Class<?> destinationActivity) {

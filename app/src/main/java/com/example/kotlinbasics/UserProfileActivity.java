@@ -6,6 +6,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -28,20 +30,27 @@ import androidx.activity.result.contract.ActivityResultContracts;
 public class UserProfileActivity extends AppCompatActivity {
 
     private TextView userEmailText, userStatusText;
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
-    private FirebaseStorage storage;
     private Button changePasswordButton, deleteAccountButton, upgradeButton;
     private ImageButton backButton;
     private de.hdodenhof.circleimageview.CircleImageView profileImageView;
+    private LottieAnimationView profileLoadingAnimation;
 
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private FirebaseStorage storage;
     private ActivityResultLauncher<Intent> pickImageLauncher;
     private Uri selectedImageUri;
+    private boolean isUploading = false;
+    private Toast currentToast; // ✅ for instant toast handling
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
+
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
         userEmailText = findViewById(R.id.userEmail);
         userStatusText = findViewById(R.id.userStatus);
@@ -50,16 +59,16 @@ public class UserProfileActivity extends AppCompatActivity {
         upgradeButton = findViewById(R.id.upgradeButton);
         backButton = findViewById(R.id.backButton);
         profileImageView = findViewById(R.id.profileImageView);
-
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        profileLoadingAnimation = findViewById(R.id.profileLoadingAnimation);
 
         backButton.setOnClickListener(v -> {
-            Intent intent = new Intent(UserProfileActivity.this, MainMenu.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
+            if (!isUploading) {
+                startActivity(new Intent(UserProfileActivity.this, MainMenu.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+                finish();
+            } else {
+                showCustomInstantToast("Uploading... please wait.");
+            }
         });
 
         fetchUserStatus();
@@ -75,6 +84,10 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void setupButtonListeners() {
         changePasswordButton.setOnClickListener(v -> {
+            if (isUploading) {
+                showCustomInstantToast("Uploading... please wait.");
+                return;
+            }
             FirebaseUser user = mAuth.getCurrentUser();
             if (user != null) {
                 mAuth.sendPasswordResetEmail(user.getEmail())
@@ -87,6 +100,10 @@ public class UserProfileActivity extends AppCompatActivity {
         });
 
         deleteAccountButton.setOnClickListener(v -> {
+            if (isUploading) {
+                showCustomInstantToast("Uploading... please wait.");
+                return;
+            }
             new AlertDialog.Builder(this)
                     .setTitle("Delete Account")
                     .setMessage("Are you sure you want to delete your account? This cannot be undone.")
@@ -96,6 +113,10 @@ public class UserProfileActivity extends AppCompatActivity {
         });
 
         upgradeButton.setOnClickListener(v -> {
+            if (isUploading) {
+                showCustomInstantToast("Uploading... please wait.");
+                return;
+            }
             FirebaseUser user = mAuth.getCurrentUser();
             if (user != null) {
                 db.collection("users").document(user.getUid()).get()
@@ -111,39 +132,6 @@ public class UserProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void fetchUserStatus() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user != null) {
-            userEmailText.setText(user.getEmail());
-            loadProfilePhoto(user.getUid());
-
-            db.collection("users").document(user.getUid()).get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        String status = documentSnapshot.getString("status");
-                        userStatusText.setText("Status: " + (status != null ? status : "free"));
-
-                        if ("premium".equalsIgnoreCase(status)) {
-                            upgradeButton.setText("Cancel Subscription");
-                            upgradeButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF4444")));
-                            upgradeButton.setCompoundDrawablesWithIntrinsicBounds(
-                                    ContextCompat.getDrawable(this, R.drawable.ic_cancel),
-                                    null, null, null);
-                        } else {
-                            upgradeButton.setText("Upgrade to Premium");
-                            upgradeButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFD700")));
-                            upgradeButton.setCompoundDrawablesWithIntrinsicBounds(
-                                    ContextCompat.getDrawable(this, R.drawable.ic_premium),
-                                    null, null, null);
-                        }
-                    })
-                    .addOnFailureListener(e -> showToast("Failed to load user data"));
-        } else {
-            userEmailText.setText("Not logged in");
-            userStatusText.setText("Status: Unknown");
-            upgradeButton.setVisibility(View.GONE);
-        }
-    }
-
     private void setupProfileImageClick() {
         pickImageLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -156,9 +144,13 @@ public class UserProfileActivity extends AppCompatActivity {
         );
 
         profileImageView.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setType("image/*");
-            pickImageLauncher.launch(intent);
+            if (!isUploading) {
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                pickImageLauncher.launch(intent);
+            } else {
+                showCustomInstantToast("Uploading... please wait.");
+            }
         });
     }
 
@@ -168,29 +160,114 @@ public class UserProfileActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
 
+        isUploading = true;
+        disableAll(true);
+
+        profileLoadingAnimation.setVisibility(View.VISIBLE);
+        profileLoadingAnimation.setAnimation("loading.json");
+        profileLoadingAnimation.playAnimation();
+        profileImageView.setVisibility(View.INVISIBLE);
+
         StorageReference profileRef = storage.getReference().child("profilePhotos/" + user.getUid() + ".jpg");
 
         profileRef.putFile(imageUri)
                 .addOnSuccessListener(taskSnapshot -> {
-                    showToast("✅ Profile photo updated!");
-                    loadProfilePhoto(user.getUid()); // Refresh
+                    new Handler().postDelayed(() -> {
+                        profileLoadingAnimation.cancelAnimation();
+                        profileLoadingAnimation.setVisibility(View.GONE);
+                        profileImageView.setVisibility(View.VISIBLE);
+                        showToast("✅ Profile photo updated!");
+                        isUploading = false;
+                        disableAll(false);
+                        loadProfilePhoto(user.getUid());
+                    }, 4000); // ✅ 4 seconds delay
                 })
-                .addOnFailureListener(e -> showToast("❌ Failed to upload photo."));
+                .addOnFailureListener(e -> {
+                    profileLoadingAnimation.cancelAnimation();
+                    profileLoadingAnimation.setVisibility(View.GONE);
+                    profileImageView.setVisibility(View.VISIBLE);
+                    showToast("❌ Failed to upload photo.");
+                    isUploading = false;
+                    disableAll(false);
+                });
+    }
+
+    private void fetchUserStatus() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            userEmailText.setText(user.getEmail());
+            loadProfilePhoto(user.getUid());
+
+            db.collection("users").document(user.getUid()).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        String status = documentSnapshot.getString("status");
+                        userStatusText.setText("Status: " + (status != null ? status : "free"));
+                        if ("premium".equalsIgnoreCase(status)) {
+                            upgradeButton.setText("Cancel Subscription");
+                            upgradeButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF4444")));
+                        } else {
+                            upgradeButton.setText("Upgrade to Premium");
+                            upgradeButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFD700")));
+                        }
+                    })
+                    .addOnFailureListener(e -> showToast("Failed to load user data"));
+        }
     }
 
     private void loadProfilePhoto(String userId) {
         StorageReference profileRef = storage.getReference().child("profilePhotos/" + userId + ".jpg");
-
         profileRef.getDownloadUrl()
-                .addOnSuccessListener(uri -> {
-                    Glide.with(this)
-                            .load(uri)
-                            .placeholder(R.drawable.default_avatar)
-                            .into(profileImageView);
-                })
-                .addOnFailureListener(e -> {
-                    profileImageView.setImageResource(R.drawable.default_avatar);
-                });
+                .addOnSuccessListener(uri -> Glide.with(this)
+                        .load(uri)
+                        .placeholder(R.drawable.default_avatar)
+                        .into(profileImageView))
+                .addOnFailureListener(e -> profileImageView.setImageResource(R.drawable.default_avatar));
+    }
+
+    private void disableAll(boolean disable) {
+        changePasswordButton.setEnabled(!disable);
+        deleteAccountButton.setEnabled(!disable);
+        upgradeButton.setEnabled(!disable);
+        backButton.setEnabled(!disable);
+        profileImageView.setEnabled(!disable);
+        userEmailText.setEnabled(!disable);
+        userStatusText.setEnabled(!disable);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isUploading) {
+            showCustomInstantToast("Uploading... please wait.");
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    private void showCustomInstantToast(String message) {
+        if (currentToast != null) {
+            currentToast.cancel();
+        }
+        LayoutInflater inflater = getLayoutInflater();
+        View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+        TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+        currentToast = new Toast(getApplicationContext());
+        currentToast.setDuration(Toast.LENGTH_SHORT);
+        currentToast.setView(layout);
+        currentToast.setGravity(Gravity.BOTTOM, 0, 150);
+        currentToast.show();
+    }
+
+    private void showToast(String message) {
+        LayoutInflater inflater = getLayoutInflater();
+        View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+        TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+        Toast toast = new Toast(getApplicationContext());
+        toast.setDuration(Toast.LENGTH_LONG);
+        toast.setView(layout);
+        toast.setGravity(Gravity.BOTTOM, 0, 150);
+        toast.show();
     }
 
     private void showCancelSubscriptionDialog() {
@@ -208,7 +285,7 @@ public class UserProfileActivity extends AppCompatActivity {
             db.collection("users").document(user.getUid())
                     .update("status", "free")
                     .addOnSuccessListener(unused -> {
-                        showToast("Subscription cancelled. You're now on free tier.");
+                        showToast("Subscription cancelled.");
                         fetchUserStatus();
                     })
                     .addOnFailureListener(e -> showToast("Failed to cancel subscription."));
@@ -218,56 +295,55 @@ public class UserProfileActivity extends AppCompatActivity {
     private void deleteUserAccount() {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
-
         String userId = user.getUid();
         String userEmail = user.getEmail();
 
-        // Step 1: Delete all reviews by this user
-        db.collection("reviews")
-                .whereEqualTo("email", userEmail)
-                .get()
+        db.collection("reviews").whereEqualTo("email", userEmail).get()
                 .addOnSuccessListener(querySnapshots -> {
                     for (var doc : querySnapshots) {
                         db.collection("reviews").document(doc.getId()).delete();
                     }
 
-                    // Step 2: Delete user's profile photo from Firebase Storage
-                    StorageReference profileRef = storage.getReference()
-                            .child("profilePhotos/" + userId + ".jpg");
-                    profileRef.delete()
+                    // DELETE Profile Photo
+                    storage.getReference().child("profilePhotos/" + userId + ".jpg")
+                            .delete()
                             .addOnSuccessListener(unused -> {
-                                // Step 3: Delete user document from Firestore
-                                db.collection("users").document(userId).delete()
-                                        .addOnSuccessListener(unused1 -> {
-                                            // Step 4: Delete user authentication account
-                                            user.delete().addOnCompleteListener(task -> {
-                                                if (task.isSuccessful()) {
-                                                    showToast("Account, photo, and data deleted successfully.");
-                                                    signOutAndRedirect();
-                                                } else {
-                                                    showToast("Failed to delete account.");
-                                                }
-                                            });
-                                        })
-                                        .addOnFailureListener(e -> showToast("Failed to delete user document."));
+                                // DELETE Embedding
+                                deleteUserEmbedding(userId);
                             })
                             .addOnFailureListener(e -> {
-                                // Even if profile photo not found (no upload), continue
-                                db.collection("users").document(userId).delete()
-                                        .addOnSuccessListener(unused1 -> {
-                                            user.delete().addOnCompleteListener(task -> {
-                                                if (task.isSuccessful()) {
-                                                    showToast("Account deleted, no profile photo found.");
-                                                    signOutAndRedirect();
-                                                } else {
-                                                    showToast("Failed to delete account.");
-                                                }
-                                            });
-                                        })
-                                        .addOnFailureListener(e2 -> showToast("Failed to delete user document."));
+                                // Profile photo not found, but still delete embedding
+                                deleteUserEmbedding(userId);
+                            });
+                });
+    }
+
+    private void deleteUserEmbedding(String userId) {
+        StorageReference embeddingRef = storage.getReference().child("embeddings/" + userId + ".enc");
+        embeddingRef.delete()
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("users").document(userId).delete()
+                            .addOnSuccessListener(unused1 -> {
+                                mAuth.getCurrentUser().delete().addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        showToast("Account, photo, embedding and data deleted successfully.");
+                                        signOutAndRedirect();
+                                    }
+                                });
                             });
                 })
-                .addOnFailureListener(e -> showToast("Failed to delete reviews."));
+                .addOnFailureListener(e -> {
+                    // If embedding not found, still continue to delete user Firestore document
+                    db.collection("users").document(userId).delete()
+                            .addOnSuccessListener(unused1 -> {
+                                mAuth.getCurrentUser().delete().addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        showToast("Account deleted. No embedding found.");
+                                        signOutAndRedirect();
+                                    }
+                                });
+                            });
+                });
     }
 
 
@@ -277,17 +353,5 @@ public class UserProfileActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
-    }
-
-    private void showToast(String message) {
-        LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
-        TextView text = layout.findViewById(R.id.toastText);
-        text.setText(message);
-        Toast toast = new Toast(getApplicationContext());
-        toast.setDuration(Toast.LENGTH_LONG);
-        toast.setView(layout);
-        toast.setGravity(Gravity.BOTTOM, 0, 150);
-        toast.show();
     }
 }
