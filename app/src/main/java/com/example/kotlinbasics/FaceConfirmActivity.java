@@ -30,6 +30,27 @@ public class FaceConfirmActivity extends AppCompatActivity {
     private FaceEmbedManager embedManager;
     private boolean fromFalseNegative;
 
+    private Toast activeToast;
+
+    private void showCustomToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel(); // Cancel the old toast if still visible
+        }
+
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+
+        android.widget.TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+
+        activeToast = new Toast(this); // assign to activeToast
+        activeToast.setDuration(Toast.LENGTH_SHORT); // use SHORT to make it fast
+        activeToast.setView(layout);
+        activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
+        activeToast.show();
+    }
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,7 +71,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
             faceImageView.setImageBitmap(faceBitmap);
         } else {
             Log.e("FaceConfirmActivity", "❌ No face image received.");
-            Toast.makeText(this, "Error loading face image", Toast.LENGTH_SHORT).show();
+            showCustomToast("Error loading face image");
             finish();
             return;
         }
@@ -59,19 +80,19 @@ public class FaceConfirmActivity extends AppCompatActivity {
             if (fromFalseNegative) {
                 Log.w("FaceConfirm", "⛔ No additional log saved. False negative already recorded.");
                 runFaceRecognition(faceBitmap);
-                Toast.makeText(this, "✅ Confirmed despite false negative", Toast.LENGTH_SHORT).show();
+                showCustomToast("✅ Confirmed despite false negative");
                 goToNextScreen();
             } else {
                 Log.d("FaceConfirm", "🟢 Saving real face log from FaceConfirm.");
                 saveConfirmedLog();
                 runFaceRecognition(faceBitmap);
-                Toast.makeText(this, "✅ Face Confirmed!", Toast.LENGTH_SHORT).show();
+                showCustomToast("✅ Face Confirmed!");
                 goToNextScreen();
             }
         });
 
         cancelBtn.setOnClickListener(v -> {
-            Toast.makeText(this, "❌ Face Rejected!", Toast.LENGTH_SHORT).show();
+            showCustomToast("❌ Face Rejected!");
 
             if (fromFalseNegative) {
                 deleteFalseNegativeLog(() -> {
@@ -181,7 +202,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             Log.e("FaceConfirmActivity", "❌ Face recognition failed", e);
-            Toast.makeText(this, "Error running face recognition", Toast.LENGTH_SHORT).show();
+            showCustomToast("Error running face recognition");
         }
     }
 

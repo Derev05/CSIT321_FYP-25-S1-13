@@ -52,11 +52,28 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     private static final int SPOOF_THRESHOLD = 3;
     private Toast activeToast;
 
-    private void showInstantToast(String message) {
-        if (activeToast != null) activeToast.cancel();
-        activeToast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
+
+    private void showCustomToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel(); // Cancel the old toast if still visible
+        }
+
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+
+        android.widget.TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+
+        activeToast = new Toast(this); // assign to activeToast
+        activeToast.setDuration(Toast.LENGTH_SHORT); // use SHORT to make it fast
+        activeToast.setView(layout);
+        activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
         activeToast.show();
     }
+
+
+
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,7 +99,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
             if (detectedFace != null && isModelLoaded) {
                 captureAndVerify();
             } else {
-                showInstantToast("No face or model not ready.");
+                showCustomToast("No face or model not ready.");
             }
         });
     }
@@ -104,7 +121,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         } else {
             Log.w("AntiSpoof", "⚠️ Spoof detected. Confidence: " + probability);
             consecutiveSpoofCount++;
-            runOnUiThread(() -> showInstantToast("Spoof detected! Attempt " + consecutiveSpoofCount));
+            runOnUiThread(() -> showCustomToast("Spoof detected! Attempt " + consecutiveSpoofCount));
 
             if (consecutiveSpoofCount >= SPOOF_THRESHOLD) {
                 if (javaCameraView != null) javaCameraView.disableView();

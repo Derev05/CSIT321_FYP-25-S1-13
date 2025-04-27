@@ -73,7 +73,8 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
     private boolean isModelLoaded = false;
     private TextView modelStatusText;
 
-    private Toast currentToast;
+    private Toast activeToast;
+
 
 
     @Override
@@ -107,20 +108,32 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
             if(detectedFace != null) {
                 verifyUser(userId);
             } else {
-                showInstantToast("No face detected, try again.");
+                showCustomToast("No face detected, try again.");
             }
         });
 
     }
 
 
-    private void showInstantToast(String message) {
-        if (currentToast != null) {
-            currentToast.cancel(); // Cancel previous toast if still showing
+    private void showCustomToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel(); // Cancel the old toast if still visible
         }
-        currentToast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
-        currentToast.show();
+
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+
+        android.widget.TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+
+        activeToast = new Toast(this); // assign to activeToast
+        activeToast.setDuration(Toast.LENGTH_SHORT); // use SHORT to make it fast
+        activeToast.setView(layout);
+        activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
+        activeToast.show();
     }
+
+
 
     private void requestCameraPermission() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -138,7 +151,7 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 enableCamera();
             } else {
-                Toast.makeText(this, "Camera permission denied.", Toast.LENGTH_LONG).show();
+                showCustomToast("Camera permission denied.");
             }
         }
     }
@@ -275,7 +288,7 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
                             String toastMsg = isVerified ?
                                     "✅ Authenticated (Score: " + scoreFormatted + "%)" :
                                     "❌ Failed (Score: " + scoreFormatted + "%)";
-                            Toast.makeText(FaceAuthActivity.this, toastMsg, Toast.LENGTH_SHORT).show();
+                            showCustomToast(toastMsg);
 
                             if (isVerified) {
                                 Intent intent = new Intent(FaceAuthActivity.this, enroll_auth.class);
@@ -292,19 +305,17 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
                     @Override
                     public void onVerificationError(String errorMessage) {
                         runOnUiThread(() -> {
-                            Toast.makeText(FaceAuthActivity.this,
-                                    "Error: " + errorMessage,
-                                    Toast.LENGTH_SHORT).show();
+                            showCustomToast("Error: " + errorMessage);
                         });
                     }
                 });
 
             } catch (Exception e) {
                 Log.e("FaceAuthActivity", "Error running face recognition", e);
-                Toast.makeText(this, "Error running face recognition", Toast.LENGTH_SHORT).show();
+                showCustomToast("Error running face recognition");
             }
         } else {
-            runOnUiThread(() -> showInstantToast("Spoof detected! Please use a real face."));
+            runOnUiThread(() -> showCustomToast("Spoof detected! Please use a real face."));
         }
     }
 
@@ -353,7 +364,7 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
         } catch (IllegalStateException e) {
             Log.e("Firebase", "Firebase not initialized", e);
             updateModelStatus("Security system error");
-            Toast.makeText(this, "Security system initialization failed", Toast.LENGTH_LONG).show();
+            showCustomToast("Security system initialization failed");
         }
     }
 

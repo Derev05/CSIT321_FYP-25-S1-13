@@ -39,6 +39,12 @@ import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtSession;
 
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.Gravity;
+import android.widget.TextView;
+
+
 public class FaceEmbedManager {
     private static final String tag = "FaceEmbedManager";
     private static final float similarity_threshold = 0.7f;
@@ -49,6 +55,18 @@ public class FaceEmbedManager {
     private final String modelPath;
     private static final String EMBED_PATH = "embeddings/";
     private String uid;
+
+    private void showCustomToast(String message) {
+        View layout = LayoutInflater.from(context).inflate(R.layout.custom_toast_layout, null);
+        TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+        Toast toast = new Toast(context);
+        toast.setDuration(Toast.LENGTH_LONG);
+        toast.setView(layout);
+        toast.setGravity(Gravity.BOTTOM, 0, 150);
+        toast.show();
+    }
+
 
     public FaceEmbedManager(Context context, String modelPath){
         this.context = context.getApplicationContext();
@@ -184,7 +202,7 @@ public class FaceEmbedManager {
         byte[] encryptedData = encryptEmbedding(embedding, userId);
 
         if (encryptedData == null) {
-            Toast.makeText(context, "Encryption failed", Toast.LENGTH_SHORT).show();
+            showCustomToast("Encryption failed");
             return;
         }
 
@@ -194,9 +212,9 @@ public class FaceEmbedManager {
         UploadTask uploadTask = embeddingRef.putBytes(encryptedData);
 
         uploadTask.addOnSuccessListener(taskSnapshot -> {
-            Toast.makeText(context, "Embedding uploaded successfully", Toast.LENGTH_SHORT).show();
+            showCustomToast("Embedding uploaded successfully");
         }).addOnFailureListener(e -> {
-            Toast.makeText(context, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            showCustomToast("Upload failed: " + e.getMessage());
         });
     }
 
@@ -319,5 +337,7 @@ public class FaceEmbedManager {
         void onVerificationResult(boolean isVerified, float similarityScore);
         void onVerificationError(String errorMessage);
     }
+
+
 
 }
