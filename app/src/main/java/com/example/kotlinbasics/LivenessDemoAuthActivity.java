@@ -8,6 +8,9 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
@@ -50,6 +53,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+
+
 public class LivenessDemoAuthActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final String MODEL_NAME = "models/anti_spoofing_model.tflite";
@@ -65,6 +70,27 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
     private AntiSpoofingClassifier antiSpoofingClassifier;
     private boolean isModelLoaded = false;
     private TextView modelStatusText;
+
+    private Toast activeToast;
+
+
+    private void showCustomToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel(); // Cancel the old toast if still visible
+        }
+
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+
+        android.widget.TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+
+        activeToast = new Toast(this); // assign to activeToast
+        activeToast.setDuration(Toast.LENGTH_SHORT); // use SHORT to make it fast
+        activeToast.setView(layout);
+        activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
+        activeToast.show();
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -97,7 +123,7 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
             if(detectedFace != null) {
                 verifyUser(userId);
             } else {
-                Toast.makeText(this, "No face detected, try again.", Toast.LENGTH_SHORT).show();
+                showCustomToast("No face detected, try again.");
             }
         });
 
@@ -119,7 +145,7 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 enableCamera();
             } else {
-                Toast.makeText(this, "Camera permission denied.", Toast.LENGTH_LONG).show();
+                showCustomToast("Camera permission denied.");
             }
         }
     }
@@ -274,7 +300,7 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
                             String toastMsg = isVerified ?
                                     "✅ Authenticated (Score: " + scoreFormatted + "%)" :
                                     "❌ Failed (Score: " + scoreFormatted + "%)";
-                            Toast.makeText(LivenessDemoAuthActivity.this, toastMsg, Toast.LENGTH_SHORT).show();
+                            showCustomToast(toastMsg);
 
                             if (isVerified) {
                                 Intent intent = new Intent(LivenessDemoAuthActivity.this, education_activity.class);
@@ -288,19 +314,18 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
                     @Override
                     public void onVerificationError(String errorMessage) {
                         runOnUiThread(() -> {
-                            Toast.makeText(LivenessDemoAuthActivity.this,
-                                    "Error: " + errorMessage,
-                                    Toast.LENGTH_SHORT).show();
+                            String errorMsg = "Error: " + errorMessage;
+                            showCustomToast(errorMsg);
                         });
                     }
                 });
 
             } catch (Exception e) {
                 Log.e("FaceAuthActivity", "Error running face recognition", e);
-                Toast.makeText(this, "Error running face recognition", Toast.LENGTH_SHORT).show();
+                showCustomToast("Error running face recognition");
             }
         } else {
-            runOnUiThread(() -> Toast.makeText(this, "Spoof detected! Please use a real face.", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> showCustomToast("Spoof detected! Please use a real face."));
         }
     }
 
@@ -349,7 +374,7 @@ public class LivenessDemoAuthActivity extends AppCompatActivity implements Camer
         } catch (IllegalStateException e) {
             Log.e("Firebase", "Firebase not initialized", e);
             updateModelStatus("Security system error");
-            Toast.makeText(this, "Security system initialization failed", Toast.LENGTH_LONG).show();
+            showCustomToast("Security system initialization failed");
         }
     }
 
