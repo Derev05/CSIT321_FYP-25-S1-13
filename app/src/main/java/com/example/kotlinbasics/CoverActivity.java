@@ -12,6 +12,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import android.app.AlertDialog;
+
+
 public class CoverActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private TextView reviewSummaryText;
@@ -45,11 +48,24 @@ public class CoverActivity extends AppCompatActivity {
         reviewSummaryText.setOnClickListener(view -> {
             Intent intent = new Intent(CoverActivity.this, ReviewDisplayActivity.class);
             startActivity(intent);
+            finish();
         });
 
         // ✅ Fetch and display total number of reviews & average rating
         loadReviewData();
     }
+
+    @Override
+    public void onBackPressed() {
+        // You can show a dialog to ask if the user wants to exit or just call super to exit normally
+        new AlertDialog.Builder(this)
+                .setMessage("Are you sure you want to exit?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", (dialog, id) -> super.onBackPressed())  // Normal back press
+                .setNegativeButton("No", null)
+                .show();
+    }
+
 
     private void loadReviewData() {
         db.collection("reviews").get().addOnCompleteListener(task -> {

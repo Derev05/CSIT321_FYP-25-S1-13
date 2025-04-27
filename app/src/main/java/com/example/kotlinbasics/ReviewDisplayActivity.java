@@ -36,6 +36,15 @@ public class ReviewDisplayActivity extends AppCompatActivity {
     private ReviewAdapter reviewAdapter;
     private static final String TAG = "ReviewDisplayActivity";
 
+
+    @Override
+    public void onBackPressed() {
+        // Navigate to CoverActivity instead of the default back navigation
+        Intent intent = new Intent(ReviewDisplayActivity.this, CoverActivity.class);
+        startActivity(intent);
+        finish(); // Close the current activity (ReviewDisplayActivity)
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
