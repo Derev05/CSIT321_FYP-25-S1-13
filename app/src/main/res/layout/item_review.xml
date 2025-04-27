@@ -1,80 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp"
     android:background="@android:color/white"
-    android:layout_marginBottom="10dp">
+    android:layout_marginHorizontal="8dp">
 
-    <!-- Profile Photo and Email Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- Profile Photo -->
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/profileImageView"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/default_avatar"
-            android:layout_marginEnd="8dp"
-            app:civ_border_width="2dp"
-            app:civ_border_color="#FFFFFF"/>
+        <!-- Profile Photo + Email Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
 
-        <!-- Censored Email Text -->
-        <TextView
-            android:id="@+id/emailTextView"
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/profileImageView"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/default_avatar"
+                app:civ_border_width="2dp"
+                app:civ_border_color="@android:color/darker_gray"
+                android:layout_marginEnd="12dp"
+                android:scaleType="centerCrop"/>
+
+            <TextView
+                android:id="@+id/emailTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="user@email.com"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"/>
+        </LinearLayout>
+
+        <RatingBar
+            android:id="@+id/ratingBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="User Email"
+            android:numStars="5"
+            android:stepSize="1.0"
+            android:isIndicator="true"
+            android:rating="0"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/reviewTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Review content goes here"
             android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"/>
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/recommendTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recommend: Yes"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/dateTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12 Apr 2025"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"/>
+
     </LinearLayout>
-
-    <!-- Rating Bar -->
-    <RatingBar
-        android:id="@+id/ratingBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:numStars="5"
-        android:stepSize="1.0"
-        android:rating="0"
-        android:isIndicator="true"
-        android:layout_marginBottom="6dp"/>
-
-    <!-- Review Text -->
-    <TextView
-        android:id="@+id/reviewTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Review content"
-        android:textSize="14sp"
-        android:textColor="@android:color/black"
-        android:paddingTop="5dp"/>
-
-    <!-- Recommend Text -->
-    <TextView
-        android:id="@+id/recommendTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Recommend"
-        android:textSize="14sp"
-        android:textColor="@android:color/black"
-        android:paddingTop="5dp"/>
-
-    <!-- Date Text -->
-    <TextView
-        android:id="@+id/dateTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Date"
-        android:textSize="12sp"
-        android:textColor="@android:color/darker_gray"
-        android:paddingTop="5dp"/>
-</LinearLayout>
+</androidx.cardview.widget.CardView>

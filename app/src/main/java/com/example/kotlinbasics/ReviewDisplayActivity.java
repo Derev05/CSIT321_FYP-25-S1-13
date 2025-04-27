@@ -14,21 +14,23 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import com.bumptech.glide.Glide;
 
 public class ReviewDisplayActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView noReviewsText;
-    private Button backButton; // ✅ Back Button
+    private Button backButton;
     private FirebaseFirestore db;
     private List<ReviewModel> reviewList;
     private ReviewAdapter reviewAdapter;
@@ -39,11 +41,11 @@ public class ReviewDisplayActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_review_display);
 
-        // ✅ Initialize Views
         recyclerView = findViewById(R.id.recyclerView);
         progressBar = findViewById(R.id.progressBar);
         noReviewsText = findViewById(R.id.noReviewsText);
-        backButton = findViewById(R.id.backButton); // ✅ Initialize Back Button
+        backButton = findViewById(R.id.backButton);
+
         db = FirebaseFirestore.getInstance();
         reviewList = new ArrayList<>();
 
@@ -51,53 +53,52 @@ public class ReviewDisplayActivity extends AppCompatActivity {
         reviewAdapter = new ReviewAdapter(reviewList);
         recyclerView.setAdapter(reviewAdapter);
 
-        // ✅ Load reviews from Firestore
         fetchReviews();
 
-        // ✅ Handle Back Button Click
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(ReviewDisplayActivity.this, CoverActivity.class);
             startActivity(intent);
-            finish(); // Close this activity
+            finish();
         });
     }
 
     private void fetchReviews() {
         progressBar.setVisibility(View.VISIBLE);
         db.collection("reviews")
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING) // <== sort by newest
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
                     if (queryDocumentSnapshots.isEmpty()) {
-                        Log.d(TAG, "🔥 No reviews found in Firestore!");
+                        Log.d(TAG, "🔥 No reviews found!");
                         noReviewsText.setVisibility(View.VISIBLE);
                         return;
                     }
 
-                    reviewList.clear(); // Clear old data before adding new
+                    reviewList.clear();
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
                         String email = document.getString("email");
                         String reviewText = document.getString("reviewText");
                         String recommend = document.getString("recommend");
                         Long timestamp = document.getLong("timestamp");
                         Long ratingLong = document.getLong("rating");
+                        String userId = document.getString("userId"); // 🛑 get userId
 
                         if (timestamp == null || ratingLong == null) {
                             Log.e(TAG, "❌ Missing data in document: " + document.getId());
-                            continue; // Skip invalid data
+                            continue;
                         }
 
                         int rating = ratingLong.intValue();
                         String date = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
                                 .format(new Date(timestamp));
 
-                        reviewList.add(new ReviewModel(email, rating, reviewText, date, recommend));
+                        reviewList.add(new ReviewModel(email, rating, reviewText, date, recommend, userId)); // 🛑 pass userId
                     }
 
                     if (reviewList.isEmpty()) {
                         noReviewsText.setVisibility(View.VISIBLE);
-                        Log.d(TAG, "🔥 No valid reviews to display!");
+                        Log.d(TAG, "🔥 No valid reviews!");
                     } else {
                         reviewAdapter.notifyDataSetChanged();
                         recyclerView.setVisibility(View.VISIBLE);
@@ -108,9 +109,8 @@ public class ReviewDisplayActivity extends AppCompatActivity {
                     Log.e(TAG, "❌ Error fetching reviews: ", e);
                 });
     }
-
-
 }
+
 
 // ✅ Review Model Class
 class ReviewModel {
@@ -119,13 +119,15 @@ class ReviewModel {
     private final String reviewText;
     private final String date;
     private final String recommend;
+    private final String userId;
 
-    public ReviewModel(String email, int rating, String reviewText, String date, String recommend) {
+    public ReviewModel(String email, int rating, String reviewText, String date, String recommend, String userId) {
         this.email = email;
         this.rating = rating;
         this.reviewText = reviewText;
         this.date = date;
         this.recommend = recommend;
+        this.userId = userId;
     }
 
     public String getEmail() { return email; }
@@ -133,15 +135,19 @@ class ReviewModel {
     public String getReviewText() { return reviewText; }
     public String getDate() { return date; }
     public String getRecommend() { return recommend; }
+    public String getUserId() { return userId; }
 }
+
 
 // ✅ RecyclerView Adapter
 class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
 
     private final List<ReviewModel> reviewList;
+    private final FirebaseStorage storage;
 
     public ReviewAdapter(List<ReviewModel> reviewList) {
         this.reviewList = reviewList;
+        this.storage = FirebaseStorage.getInstance();
     }
 
     @NonNull
@@ -155,21 +161,32 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ReviewModel review = reviewList.get(position);
 
-        // Censor the email (example: sy****wan@gmail.com)
         holder.emailTextView.setText(censorEmail(review.getEmail()));
-
         holder.ratingBar.setRating(review.getRating());
         holder.reviewTextView.setText(review.getReviewText());
         holder.dateTextView.setText(review.getDate());
         holder.recommendTextView.setText("Recommend: " + review.getRecommend());
 
-        // Load default profile photo
-        Glide.with(holder.itemView.getContext())
-                .load(R.drawable.default_avatar) // for now, load default_avatar from drawable
-                .into(holder.profileImageView);
+        holder.profileImageView.setImageResource(R.drawable.default_avatar); // Default first
+
+        if (review.getUserId() != null && !review.getUserId().isEmpty()) {
+            StorageReference profileRef = storage.getReference()
+                    .child("profilePhotos/" + review.getUserId() + ".jpg");
+
+            profileRef.getDownloadUrl()
+                    .addOnSuccessListener(uri -> {
+                        Glide.with(holder.itemView.getContext())
+                                .load(uri)
+                                .placeholder(R.drawable.default_avatar)
+                                .error(R.drawable.default_avatar)
+                                .into(holder.profileImageView);
+                    })
+                    .addOnFailureListener(e -> {
+                        holder.profileImageView.setImageResource(R.drawable.default_avatar);
+                    });
+        }
     }
 
-    // Censoring email helper
     private String censorEmail(String email) {
         int atIndex = email.indexOf("@");
         if (atIndex > 2) {
@@ -178,7 +195,7 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
             String domain = email.substring(atIndex);
             return firstTwo + "****" + lastTwoBeforeAt + domain;
         } else {
-            return email; // if email too short, just return normal
+            return email;
         }
     }
 
@@ -203,3 +220,6 @@ class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ViewHolder> {
         }
     }
 }
+
+
+
