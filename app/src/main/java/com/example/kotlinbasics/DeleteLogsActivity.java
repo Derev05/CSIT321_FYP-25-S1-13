@@ -44,6 +44,8 @@ public class DeleteLogsActivity extends AppCompatActivity {
     private String currentUID;
     private String selectedLogType = "Enrol Logs";
 
+    private Toast activeToast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,13 +79,17 @@ public class DeleteLogsActivity extends AppCompatActivity {
         logTypeSpinner.setAdapter(spinnerAdapter);
 
         logTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                exitMultiSelectMode(); // cancel multi-select first to avoid crash
                 selectedLogType = parent.getItemAtPosition(position).toString();
                 fetchLogs();
             }
 
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
+
 
         clearLogsButton.setOnClickListener(v -> confirmClearAllLogs());
 
@@ -191,6 +197,22 @@ public class DeleteLogsActivity extends AppCompatActivity {
         });
     }
 
+    private void showCustomToast(String message) {
+        if (activeToast != null) {
+            activeToast.cancel();
+        }
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
+        android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
+
+        android.widget.TextView text = layout.findViewById(R.id.toastText);
+        text.setText(message);
+
+        activeToast = new Toast(this);
+        activeToast.setDuration(Toast.LENGTH_SHORT);
+        activeToast.setView(layout);
+        activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
+        activeToast.show();
+    }
     private void exitMultiSelectMode() {
         isMultiSelectMode = false;
         selectedPositions.clear();
@@ -287,7 +309,7 @@ public class DeleteLogsActivity extends AppCompatActivity {
                             batch.delete(doc.getReference());
                         }
                         batch.commit().addOnSuccessListener(aVoid -> {
-                            Toast.makeText(DeleteLogsActivity.this, "✅ All logs deleted", Toast.LENGTH_SHORT).show();
+                            showCustomToast("All logs deleted");
                             fetchLogs();
                         });
                     });
@@ -310,7 +332,7 @@ public class DeleteLogsActivity extends AppCompatActivity {
                         }
                     }
                     batch.commit().addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "✅ Log + " + count.get() + " auth logs deleted", Toast.LENGTH_SHORT).show();
+                        showCustomToast("✅ Log + " + count.get() + " auth logs deleted");
                         fetchLogs();
                     });
                 });
