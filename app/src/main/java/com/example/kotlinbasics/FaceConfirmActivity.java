@@ -29,27 +29,24 @@ public class FaceConfirmActivity extends AppCompatActivity {
     private Bitmap faceBitmap;
     private FaceEmbedManager embedManager;
     private boolean fromFalseNegative;
-
     private Toast activeToast;
 
     private void showCustomToast(String message) {
         if (activeToast != null) {
-            activeToast.cancel(); // Cancel the old toast if still visible
+            activeToast.cancel();
         }
-
         android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
         android.view.View layout = inflater.inflate(R.layout.custom_toast_layout, findViewById(android.R.id.content), false);
 
         android.widget.TextView text = layout.findViewById(R.id.toastText);
         text.setText(message);
 
-        activeToast = new Toast(this); // assign to activeToast
-        activeToast.setDuration(Toast.LENGTH_SHORT); // use SHORT to make it fast
+        activeToast = new Toast(this);
+        activeToast.setDuration(Toast.LENGTH_SHORT);
         activeToast.setView(layout);
         activeToast.setGravity(android.view.Gravity.BOTTOM, 0, 150);
         activeToast.show();
     }
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,12 +75,12 @@ public class FaceConfirmActivity extends AppCompatActivity {
 
         confirmBtn.setOnClickListener(v -> {
             if (fromFalseNegative) {
-                Log.w("FaceConfirm", "⛔ No additional log saved. False negative already recorded.");
+                Log.i("FaceConfirm", "⛔ Skipping save — false negative already logged.");
                 runFaceRecognition(faceBitmap);
                 showCustomToast("✅ Confirmed despite false negative");
                 goToNextScreen();
             } else {
-                Log.d("FaceConfirm", "🟢 Saving real face log from FaceConfirm.");
+                Log.i("FaceConfirm", "🟢 Saving real face log.");
                 saveConfirmedLog();
                 runFaceRecognition(faceBitmap);
                 showCustomToast("✅ Face Confirmed!");
@@ -93,7 +90,6 @@ public class FaceConfirmActivity extends AppCompatActivity {
 
         cancelBtn.setOnClickListener(v -> {
             showCustomToast("❌ Face Rejected!");
-
             if (fromFalseNegative) {
                 deleteFalseNegativeLog(() -> {
                     Log.d("FaceConfirm", "🗑️ False negative log removed after rejection.");
@@ -162,14 +158,14 @@ public class FaceConfirmActivity extends AppCompatActivity {
                         Boolean isFalseNegative = doc.getBoolean("false_negative");
                         if (Boolean.TRUE.equals(isFalseNegative)) {
                             doc.getReference().delete()
-                                    .addOnSuccessListener(v -> Log.d("FaceConfirm", "🗑️ False negative log deleted"))
+                                    .addOnSuccessListener(aVoid -> Log.d("FaceConfirm", "🗑️ False negative deleted"))
                                     .addOnFailureListener(e -> Log.e("FaceConfirm", "❌ Deletion failed", e));
                         }
                     }
                     onComplete.run();
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FaceConfirm", "❌ Fetch log failed", e);
+                    Log.e("FaceConfirm", "❌ Failed to fetch logs", e);
                     onComplete.run();
                 });
     }
@@ -214,9 +210,9 @@ public class FaceConfirmActivity extends AppCompatActivity {
     }
 
     private void goBackToEnroll() {
-        Intent cancelIntent = new Intent(this, FaceEnrollActivity.class);
-        cancelIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(cancelIntent);
+        Intent intent = new Intent(this, FaceEnrollActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
         finish();
     }
 }
