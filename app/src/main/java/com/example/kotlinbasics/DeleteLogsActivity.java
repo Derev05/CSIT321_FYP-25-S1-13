@@ -103,7 +103,7 @@ public class DeleteLogsActivity extends AppCompatActivity {
 
         logListView.setOnItemClickListener((parent, view, position, id) -> {
             if (position >= logDocuments.size() || displayList.get(position).startsWith("⚠️")) {
-                Toast.makeText(DeleteLogsActivity.this, "⚠️ No valid log selected", Toast.LENGTH_SHORT).show();
+                showCustomToast(" No valid log selected");
                 return;
             }
 
@@ -126,15 +126,11 @@ public class DeleteLogsActivity extends AppCompatActivity {
                         .setMessage(logText)
                         .setPositiveButton("Delete This Log", (dialog, which) -> {
                             doc.getReference().delete().addOnSuccessListener(aVoid -> {
-                                if ("Enrol Logs".equals(typeCopy)) {
-                                    long ts = doc.getLong("timestamp") != null ? doc.getLong("timestamp") : 0;
-                                    deleteMatchingAuthLogs(ts);
-                                } else {
-                                    Toast.makeText(DeleteLogsActivity.this, "✅ Log deleted", Toast.LENGTH_SHORT).show();
-                                    fetchLogs();
-                                }
+                                showCustomToast( "Log deleted");
+                                fetchLogs();
+
                             }).addOnFailureListener(e -> {
-                                Toast.makeText(DeleteLogsActivity.this, "❌ Failed to delete", Toast.LENGTH_SHORT).show();
+                                showCustomToast("Failed to delete");
                             });
                         })
                         .setNegativeButton("Close", null)
@@ -167,18 +163,23 @@ public class DeleteLogsActivity extends AppCompatActivity {
 
                         for (int pos : sorted) {
                             DocumentSnapshot doc = logDocuments.get(pos);
+
+                            // IMPORTANT: Only delete from selectedLogType (no auth log)
                             batch.delete(doc.getReference());
                         }
 
                         batch.commit().addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, "✅ Deleted selected logs", Toast.LENGTH_SHORT).show();
+                            showCustomToast("Deleted selected logs");
                             exitMultiSelectMode();
                             fetchLogs();
+                        }).addOnFailureListener(e -> {
+                            showCustomToast("Failed to delete selected logs");
                         });
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
         });
+
 
 
         selectAllButton.setOnClickListener(v -> {
@@ -332,7 +333,7 @@ public class DeleteLogsActivity extends AppCompatActivity {
                         }
                     }
                     batch.commit().addOnSuccessListener(aVoid -> {
-                        showCustomToast("✅ Log + " + count.get() + " auth logs deleted");
+                        showCustomToast("✅ Log deleted");
                         fetchLogs();
                     });
                 });
