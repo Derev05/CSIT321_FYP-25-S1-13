@@ -243,6 +243,12 @@ public class LoginActivity extends AppCompatActivity {
         forgotPasswordButton.setEnabled(true);
     }
 
+    @Override
+    public void onBackPressed() {
+        showCustomToast("You cannot go back from the login screen.");
+    }
+
+
     private void resetLoginState() {
         loginInProgress = false;
         enableInputs();
