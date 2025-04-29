@@ -202,7 +202,7 @@ public class activity_terms_condition extends AppCompatActivity {
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Enter Password")
-                .setMessage("Your device doesn't support biometrics or you prefer using app password.\nEnter your password to continue.")
+                .setMessage("Your device doesn't support biometrics or you prefer using app password.\nEnter your app password to continue.")
                 .setView(layout)
                 .setCancelable(false)
                 .setPositiveButton("Acknowledge", null)
