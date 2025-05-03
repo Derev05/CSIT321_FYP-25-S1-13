@@ -24,9 +24,10 @@ public class OtpVerificationActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "LoginPrefs";
     private static final String KEY_LAST_OTP_VERIFIED = "last_otp_verified";
-    private static final String KEY_PENDING_OTP = "pending_otp"; // ✅ added
+    private static final String KEY_PENDING_OTP = "pending_otp";
+    private static final String KEY_OTP_CREATED_TIME = "otp_created_time";
     private static final long OTP_EXPIRATION_TIME = 60 * 60 * 1000; // 1 hour
-    private static final long RESEND_COOLDOWN = 60 * 1000; // 1 min cooldown
+    private static final long RESEND_COOLDOWN = 60 * 1000; // 1 minute
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -42,28 +43,23 @@ public class OtpVerificationActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         userEmail = getIntent().getStringExtra("email");
-        generatedOtp = getIntent().getStringExtra("otp");
-        otpGeneratedTime = SystemClock.elapsedRealtime();
+        generatedOtp = sharedPreferences.getString(KEY_PENDING_OTP, "");
+        otpGeneratedTime = sharedPreferences.getLong(KEY_OTP_CREATED_TIME, 0);
 
         emailDisplay.setText("Email: " + userEmail);
-        showToast("Please check your inbox or spam! OTP sent to " + userEmail);
+        showToast("📨 OTP sent to " + userEmail + ". Valid for 1 hour.");
         startResendCooldown();
 
-        // Auto-verify when 6 digits typed
         otpInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override public void afterTextChanged(Editable s) {
-                String enteredOtp = s.toString().trim();
-                if (enteredOtp.length() == 6) {
-                    verifyOtp(enteredOtp);
-                }
+                if (s.length() == 6) verifyOtp(s.toString().trim());
             }
         });
 
         verifyOtpButton.setOnClickListener(v -> {
-            String enteredOtp = otpInput.getText().toString().trim();
-            verifyOtp(enteredOtp);
+            verifyOtp(otpInput.getText().toString().trim());
         });
 
         resendOtpButton.setOnClickListener(v -> {
@@ -73,11 +69,18 @@ public class OtpVerificationActivity extends AppCompatActivity {
     }
 
     private void verifyOtp(String enteredOtp) {
+        long now = System.currentTimeMillis();
+        if ((now - otpGeneratedTime) > OTP_EXPIRATION_TIME) {
+            showToast("❌ OTP expired. Please resend a new one.");
+            sharedPreferences.edit().remove(KEY_PENDING_OTP).remove(KEY_OTP_CREATED_TIME).apply();
+            return;
+        }
+
         if (enteredOtp.equals(generatedOtp)) {
-            long now = System.currentTimeMillis();
             sharedPreferences.edit()
                     .putLong(KEY_LAST_OTP_VERIFIED, now)
-                    .remove(KEY_PENDING_OTP) // ✅ clear pending
+                    .remove(KEY_PENDING_OTP)
+                    .remove(KEY_OTP_CREATED_TIME)
                     .apply();
 
             startActivity(new Intent(this, MainMenu.class)
@@ -91,20 +94,21 @@ public class OtpVerificationActivity extends AppCompatActivity {
     private void sendOtp(String email) {
         loadingSpinner.setVisibility(View.VISIBLE);
         generatedOtp = GmailSender.generateOTP();
-        otpGeneratedTime = SystemClock.elapsedRealtime();
+        otpGeneratedTime = System.currentTimeMillis();
 
         sharedPreferences.edit()
-                .putString(KEY_PENDING_OTP, generatedOtp) // ✅ update pending OTP
+                .putString(KEY_PENDING_OTP, generatedOtp)
+                .putLong(KEY_OTP_CREATED_TIME, otpGeneratedTime)
                 .apply();
 
         GmailSender.sendEmailAsync(email, "Your OTP Code", "Your OTP is: " + generatedOtp, success -> {
             runOnUiThread(() -> {
                 loadingSpinner.setVisibility(View.GONE);
                 if (success) {
-                    showToast("✅ OTP resent.");
+                    showToast("✅ New OTP sent to " + email);
                     startResendCooldown();
                 } else {
-                    showToast("❌ Failed to resend OTP.");
+                    showToast("❌ Failed to send OTP.");
                     resendOtpButton.setEnabled(true);
                 }
             });

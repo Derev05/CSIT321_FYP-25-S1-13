@@ -42,10 +42,12 @@ public class LoginActivity extends AppCompatActivity {
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_LAST_OTP_VERIFIED = "last_otp_verified";
     private static final String KEY_LAST_UID = "last_user_uid";
-    private static final String KEY_PENDING_OTP = "pending_otp"; // ✅ Added
+    private static final String KEY_PENDING_OTP = "pending_otp";
+    private static final String KEY_OTP_CREATED_TIME = "otp_created_time";
     private static final long OTP_VALID_DURATION = 60 * 60 * 1000; // 1 hour
 
     private boolean loginInProgress = false;
+    private Toast activeToast;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,7 +137,10 @@ public class LoginActivity extends AppCompatActivity {
 
                         if (isNewUser || otpExpired) {
                             String pendingOtp = sharedPreferences.getString(KEY_PENDING_OTP, null);
-                            if (pendingOtp != null) {
+                            long otpTime = sharedPreferences.getLong(KEY_OTP_CREATED_TIME, 0);
+                            boolean otpStillValid = System.currentTimeMillis() - otpTime < OTP_VALID_DURATION;
+
+                            if (pendingOtp != null && otpStillValid) {
                                 Intent intent = new Intent(this, OtpVerificationActivity.class);
                                 intent.putExtra("email", email);
                                 intent.putExtra("otp", pendingOtp);
@@ -170,15 +175,17 @@ public class LoginActivity extends AppCompatActivity {
 
     private void generateAndSendOTP(String email) {
         String otp = String.format("%06d", new Random().nextInt(999999));
+        long now = System.currentTimeMillis();
 
         sharedPreferences.edit()
                 .putString(KEY_PENDING_OTP, otp)
+                .putLong(KEY_OTP_CREATED_TIME, now) // ✅ Save OTP creation time
                 .putLong(KEY_LAST_OTP_VERIFIED, 0)
                 .apply();
 
         emailExecutor.execute(() -> {
             String subject = "Your OTP Code For BioAuth";
-            String body = "Your OTP is: " + otp + "\n\nUse this code to verify your login.";
+            String body = "Your OTP is: " + otp + "\n\nUse this code to verify your login. It is valid for 1 hour.";
             GmailSender.sendEmailAsync(email, subject, body, success ->
                     Log.d(TAG, success ? "✅ OTP email sent" : "❌ OTP email failed")
             );
@@ -245,9 +252,15 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        showCustomToast("You cannot go back from the login screen.");
+        if (loginInProgress) {
+            showCustomToast("Please wait, login in progress...");
+        } else {
+            Intent intent = new Intent(this, CoverActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        }
     }
-
 
     private void resetLoginState() {
         loginInProgress = false;
@@ -255,13 +268,18 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void showCustomToast(String msg) {
+        if (activeToast != null) {
+            activeToast.cancel();
+        }
+
         View view = LayoutInflater.from(this).inflate(R.layout.custom_toast_layout, findViewById(R.id.toastText));
         ((TextView) view.findViewById(R.id.toastText)).setText(msg);
-        Toast toast = new Toast(this);
-        toast.setView(view);
-        toast.setGravity(Gravity.BOTTOM, 0, 100);
-        toast.setDuration(Toast.LENGTH_LONG);
-        toast.show();
+
+        activeToast = new Toast(this);
+        activeToast.setView(view);
+        activeToast.setGravity(Gravity.BOTTOM, 0, 100);
+        activeToast.setDuration(Toast.LENGTH_SHORT);
+        activeToast.show();
     }
 
     private void hideKeyboard() {
