@@ -4,8 +4,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class enroll_auth extends AppCompatActivity {
@@ -30,8 +36,17 @@ public class enroll_auth extends AppCompatActivity {
 
         // You can add authBtn logic here if needed
         authBtn.setOnClickListener(v ->{
-            Intent authIntent = new Intent(enroll_auth.this, FaceAuthActivity.class);
-            startActivity(authIntent);
+            FirebaseAuth auth = FirebaseAuth.getInstance();
+            String userId = auth.getCurrentUser().getUid();
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+            StorageReference embeddingRef = storageReference.child("embeddings/" + userId +".enc");
+
+            embeddingRef.getMetadata().addOnSuccessListener(storageMetadata -> {
+                Intent authIntent = new Intent(enroll_auth.this, FaceAuthActivity.class);
+                startActivity(authIntent);
+            }).addOnFailureListener(e ->{
+                Toast.makeText(enroll_auth.this, "Please enroll first before authentication.", Toast.LENGTH_LONG).show();
+            });
         });
     }
 
