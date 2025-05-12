@@ -22,7 +22,7 @@ public class AntiSpoofingClassifier {
     private static final String TAG = "AntiSpoofing";
 
     private static final int INPUT_SIZE = 224;
-    private static final float PROBABILITY_THRESHOLD = 0.7f;
+    private static final float PROBABILITY_THRESHOLD = 0.45f;
     private static final float IMAGE_MEAN = 0.0f;
     private static final float IMAGE_STD = 255.0f;
 
@@ -70,7 +70,7 @@ public class AntiSpoofingClassifier {
             lastProbability = outputBuffer.getFloatArray()[0];
             Log.d(TAG, "Anti-spoofing probability: " + lastProbability);
 
-            return lastProbability > PROBABILITY_THRESHOLD;
+            return lastProbability < PROBABILITY_THRESHOLD;
         } catch (Exception e) {
             Log.e(TAG, "Error during anti-spoofing classification", e);
             lastProbability = 0f;

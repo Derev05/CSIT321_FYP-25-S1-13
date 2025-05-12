@@ -59,7 +59,7 @@ import java.util.Collections;
 
 public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
-    private static final String MODEL_NAME = "models/anti_spoofing_model.tflite";
+    private static final String MODEL_NAME = "models/anti_spoofing_model_lcc_v54.tflite";
     private static final String MODEL_VERSION_FILE = "models/model_version.txt";
     private static final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     private JavaCameraView javaCameraView;

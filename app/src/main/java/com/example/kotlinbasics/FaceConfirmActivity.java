@@ -60,6 +60,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         byte[] byteArray = intent.getByteArrayExtra("image");
+        float probability = intent.getFloatExtra("probability", 0.4f);
         fromFalseNegative = intent.getBooleanExtra("fromFalseNegative", false);
         Log.d("DEBUG_FLAG", "fromFalseNegative: " + fromFalseNegative);
 
@@ -81,7 +82,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
                 goToNextScreen();
             } else {
                 Log.i("FaceConfirm", "🟢 Saving real face log.");
-                saveConfirmedLog();
+                saveConfirmedLog(probability);
                 runFaceRecognition(faceBitmap);
                 showCustomToast("✅ Face Confirmed!");
                 goToNextScreen();
@@ -101,7 +102,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
         });
     }
 
-    private void saveConfirmedLog() {
+    private void saveConfirmedLog(float probability) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() == null) {
             Log.e("FaceConfirm", "❌ No logged-in user found.");
@@ -119,7 +120,7 @@ public class FaceConfirmActivity extends AppCompatActivity {
         Map<String, Object> log = new HashMap<>();
         log.put("userId", userId);
         log.put("email", email);
-        log.put("probability", 1.0f);
+        log.put("probability", probability);
         log.put("decision", false); // Real face
         log.put("timestamp", timestamp);
         log.put("readable_time", readableTime);

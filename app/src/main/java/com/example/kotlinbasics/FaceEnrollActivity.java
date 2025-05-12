@@ -36,7 +36,7 @@ import java.util.*;
 public class FaceEnrollActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
-    private static final String MODEL_NAME = "models/anti_spoofing_model.tflite";  // anti_spoofing_model_2.tflite
+    private static final String MODEL_NAME = "models/anti_spoofing_model_lcc_v54.tflite";  // anti_spoofing_model_2.tflite
     private static final String MODEL_VERSION_FILE = "models/model_version.txt";
 
     private JavaCameraView javaCameraView;
@@ -107,12 +107,12 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         Utils.matToBitmap(croppedFace, faceBitmap);
 
         boolean isReal = antiSpoofingClassifier.isRealFace(faceBitmap);
-        float probability = antiSpoofingClassifier.getLastProbability();
+        float probability = antiSpoofingClassifier.getSpoofProbability(faceBitmap);
 
         if (isReal) {
             Log.i("AntiSpoof", "✅ Real face. Confidence: " + probability);
             consecutiveSpoofCount = 0;
-            proceedWithEnrollment(faceBitmap, false);
+            proceedWithEnrollment(faceBitmap, probability, false);
         } else {
             Log.w("AntiSpoof", "⚠️ Spoof detected. Confidence: " + probability);
             consecutiveSpoofCount++;
@@ -147,13 +147,13 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
                                             }
                                         }
                                         saveLog(probability, true, true); // save ONLY false negative after deleting 2 spoof
-                                        proceedWithEnrollment(faceBitmap, true);
+                                        proceedWithEnrollment(faceBitmap, probability ,true);
                                         consecutiveSpoofCount = 0;
                                     })
                                     .addOnFailureListener(e -> {
                                         Log.e("FaceEnroll", "❌ Failed to delete previous spoof logs", e);
                                         saveLog(probability, true, true);
-                                        proceedWithEnrollment(faceBitmap, true);
+                                        proceedWithEnrollment(faceBitmap, probability,true);
                                         consecutiveSpoofCount = 0;
                                     });
                         })
@@ -168,13 +168,14 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
         }
     }
 
-    private void proceedWithEnrollment(Bitmap faceBitmap, boolean fromFalseNegative) {
+    private void proceedWithEnrollment(Bitmap faceBitmap, float probability ,boolean fromFalseNegative) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         faceBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] byteArray = stream.toByteArray();
 
         Intent intent = new Intent(this, FaceConfirmActivity.class);
         intent.putExtra("face", new SerializableRect(detectedFace));
+        intent.putExtra("probability",probability);
         intent.putExtra("image", byteArray);
         intent.putExtra("fromFalseNegative", fromFalseNegative);
         startActivity(intent);
