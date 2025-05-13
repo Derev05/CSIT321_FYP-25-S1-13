@@ -257,7 +257,7 @@ public class FaceEnrollActivity extends AppCompatActivity implements CameraBridg
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat();
         grayFrame = new Mat();
-        absoluteFaceSize = (int) (height * 0.3);
+        absoluteFaceSize = (int) (height * 0.35);
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);

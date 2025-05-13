@@ -168,7 +168,7 @@ public class FaceAuthActivity extends AppCompatActivity implements CameraBridgeV
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat();
         grayFrame = new Mat();
-        absoluteFaceSize = (int) (height * 0.3);
+        absoluteFaceSize = (int) (height * 0.35);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
