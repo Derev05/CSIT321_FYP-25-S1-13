@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KotlinBasics"
+rootProject.name = "BioAuth"
 include(":app")

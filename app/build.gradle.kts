@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.kotlinbasics"
+    namespace = "com.example.bioauth"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.kotlinbasics"
+        applicationId = "com.example.bioauth"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
